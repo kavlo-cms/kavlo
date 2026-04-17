@@ -1,0 +1,93 @@
+type Query {
+  route(path: String!, preview: Boolean = false): ContentRoute
+    @field(resolver: "App\\GraphQL\\Queries\\ContentQuery@route")
+
+  routes(types: [String!], preview: Boolean = false): [ContentRoute!]!
+    @field(resolver: "App\\GraphQL\\Queries\\ContentQuery@routes")
+
+  page(path: String, slug: String, preview: Boolean = false): Page
+    @field(resolver: "App\\GraphQL\\Queries\\ContentQuery@page")
+
+  menu(slug: String!): Menu
+    @field(resolver: "App\\GraphQL\\Queries\\ContentQuery@menu")
+
+  form(slug: String!): Form
+    @field(resolver: "App\\GraphQL\\Queries\\ContentQuery@form")
+}
+
+type ContentRoute {
+  id: ID!
+  type: String!
+  key: String!
+  slug: String!
+  label: String!
+  path: String
+  published: Boolean!
+  updated_at: String
+}
+
+type Page {
+  id: ID!
+  title: String!
+  slug: String!
+  path: String!
+  type: String
+  isPublished: Boolean!
+  isHomepage: Boolean!
+  metaTitle: String
+  metaDescription: String
+  ogImage: String
+  metadataJson: String!
+  blocks: [CmsBlock!]!
+  updatedAt: String
+  publishedAt: String
+}
+
+type CmsBlock {
+  id: String!
+  type: String!
+  order: Int
+  dataJson: String!
+}
+
+type Menu {
+  id: ID!
+  name: String!
+  slug: String!
+  items: [MenuItem!]!
+  updatedAt: String
+}
+
+type MenuItem {
+  id: ID!
+  label: String!
+  url: String
+  target: String
+  pageId: ID
+  pageSlug: String
+  children: [MenuItem!]!
+}
+
+type Form {
+  id: ID!
+  name: String!
+  slug: String!
+  description: String
+  submissionAction: String!
+  successMessage: String
+  redirectUrl: String
+  notifyEmail: String
+  submissionPath: String!
+  fields: [FormField!]!
+  blocks: [CmsBlock!]!
+  updatedAt: String
+}
+
+type FormField {
+  key: String!
+  label: String!
+  type: String!
+  required: Boolean!
+  placeholder: String
+  optionsJson: String!
+}

@@ -1,0 +1,8 @@
+{
+    "name": "Example SEO Plugin",
+    "slug": "example-seo",
+    "version": "1.0.0",
+    "description": "Adds advanced SEO fields and structured data (JSON-LD) to your pages.",
+    "author": "CMS Team",
+    "provider": "Plugins\\ExampleSeo\\ExampleSeoServiceProvider"
+}

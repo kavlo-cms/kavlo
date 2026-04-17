@@ -1,0 +1,37 @@
+name: cms
+recipe: laravel
+env_file:
+    - db.env
+proxy:
+    mailhog:
+        - mail.cms.lndo.site
+config:
+    php: '8.4'
+    via: nginx:1.27
+    webroot: public
+    xdebug: false
+    config:
+        php: .lando/php.ini
+
+services:
+    database:
+        type: mysql:8.0
+        portforward: false
+        creds:
+            user: lando
+            password: landodev!
+            database: validag
+    mailhog:
+        type: mailhog
+        hogfrom:
+            - appserver
+tooling:
+    artisan:
+        service: appserver
+        cmd: php artisan
+    composer:
+        service: appserver
+        cmd: composer --ansi
+    php:
+        service: appserver
+        cmd: php

@@ -1,0 +1,16 @@
+{
+    "name": "Midnight Blue",
+    "slug": "midnight-blue",
+    "version": "1.0.0",
+    "description": "A dark, modern theme with deep navy tones and sky-blue accents.",
+    "author": "CMS Team",
+    "canvas": {
+        "class": "bg-slate-950 text-slate-200",
+        "font": null
+    },
+    "pageTypes": [
+        { "type": "page",       "label": "Standard Page",  "view": "pages.show" },
+        { "type": "landing",    "label": "Landing Page",   "view": "pages.landing" },
+        { "type": "full-width", "label": "Full Width",     "view": "pages.full-width" }
+    ]
+}
