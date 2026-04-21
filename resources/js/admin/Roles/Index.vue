@@ -90,7 +90,7 @@ function toggleGroupPerms(groupPerms: string[], checked: boolean) {
 function savePermissions() {
     if (!editing.value) return;
     router.put(
-        admin.roles.update.url({ role: editing.value.id }),
+        admin.roles.update.url({ role: String(editing.value.id) }),
         { permissions: editPerms.value },
         {
             preserveScroll: true,
@@ -128,7 +128,7 @@ function createRole() {
 // ── Delete role ────────────────────────────────────────────────────────────
 function destroy(role: Role) {
     if (!confirm(`Delete role "${role.name}"? This cannot be undone.`)) return;
-    router.delete(admin.roles.destroy.url({ role: role.id }), {
+    router.delete(admin.roles.destroy.url({ role: String(role.id) }), {
         preserveScroll: true,
     });
 }

@@ -13,7 +13,7 @@ A Laravel 13 CMS with an Inertia/Vue 3 admin, page builder, themes, plugins, for
 
 ## Stack
 
-- PHP 8.3+
+- PHP 8.4+
 - Laravel 13
 - Inertia.js + Vue 3 + TypeScript
 - Vite
