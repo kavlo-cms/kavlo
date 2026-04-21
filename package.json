@@ -3,6 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "wayfinder:generate": "sh -c 'if [ -n \"${WAYFINDER_COMMAND:-}\" ]; then $WAYFINDER_COMMAND --with-form; elif [ -n \"${LANDO:-}\" ]; then lando php artisan wayfinder:generate --with-form; else php artisan wayfinder:generate --with-form; fi'",
         "build": "vite build",
         "build:ssr": "vite build && vite build --ssr",
         "dev": "vite",
@@ -10,7 +11,7 @@
         "format:check": "prettier --check resources/",
         "lint": "eslint . --fix",
         "lint:check": "eslint .",
-        "types:check": "vue-tsc --noEmit"
+        "types:check": "npm run wayfinder:generate && vue-tsc --noEmit"
     },
     "workspaces": [
         "resources/themes/*",
