@@ -6,6 +6,9 @@ import laravel from 'laravel-vite-plugin';
 import { resolve } from 'path';
 import { defineConfig } from 'vite';
 
+const wayfinderCommand = process.env.WAYFINDER_COMMAND
+    ?? (process.env.LANDO ? 'lando php artisan wayfinder:generate' : 'php artisan wayfinder:generate');
+
 export default defineConfig({
     resolve: {
         alias: {
@@ -30,7 +33,7 @@ export default defineConfig({
         }),
         wayfinder({
             formVariants: true,
-            command: 'lando php artisan wayfinder:generate',
+            command: wayfinderCommand,
         }),
     ],
     server: {
