@@ -34,6 +34,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+require __DIR__.'/settings.php';
+
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('/health', HealthController::class)->name('health');
 

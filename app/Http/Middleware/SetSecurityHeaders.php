@@ -19,7 +19,7 @@ class SetSecurityHeaders
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Frame-Options', (string) config('cms.security.headers.x_frame_options', 'SAMEORIGIN'));
 
-        if ($request->isSecure()) {
+        if ($this->shouldSendHsts($request)) {
             $value = 'max-age='.max(0, (int) config('cms.security.headers.hsts_max_age', 31536000));
 
             if ((bool) config('cms.security.headers.hsts_include_subdomains', true)) {
@@ -34,5 +34,20 @@ class SetSecurityHeaders
         }
 
         return $response;
+    }
+
+    private function shouldSendHsts(Request $request): bool
+    {
+        if ($request->isSecure()) {
+            return true;
+        }
+
+        $https = strtolower((string) $request->server('HTTPS', ''));
+
+        if (in_array($https, ['on', '1'], true)) {
+            return true;
+        }
+
+        return strtolower((string) $request->headers->get('x-forwarded-proto', '')) === 'https';
     }
 }
