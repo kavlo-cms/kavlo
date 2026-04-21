@@ -31,7 +31,7 @@ class AdminSecurityHardeningTest extends TestCase
             'is_published' => true,
         ]);
 
-        $this->withServerVariables(['HTTPS' => 'on'])
+        $this->withHeaders(['X-Forwarded-Proto' => 'https'])
             ->get('/security-page')
             ->assertOk()
             ->assertHeader('Content-Security-Policy', "base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'")
