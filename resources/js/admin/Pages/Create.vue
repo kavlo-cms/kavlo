@@ -6,7 +6,11 @@ import admin from '@/routes/admin';
 import type { BreadcrumbItem } from '@/types';
 import PageForm from './partials/PageForm.vue';
 
-interface PageType { type: string; label: string; view: string; }
+interface PageType {
+    type: string;
+    label: string;
+    view: string;
+}
 
 defineProps<{ pages?: unknown[]; pageTypes?: PageType[] }>();
 

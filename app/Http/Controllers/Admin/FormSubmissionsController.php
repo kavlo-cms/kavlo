@@ -9,6 +9,7 @@ use App\Services\FormBuilder;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FormSubmissionsController extends Controller
 {
@@ -31,7 +32,7 @@ class FormSubmissionsController extends Controller
         return back()->with('success', 'Submission deleted.');
     }
 
-    public function export(Form $form): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function export(Form $form): StreamedResponse
     {
         $fields = $form->submissionFields();
 

@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { AlertTriangle, ArrowRightLeft, CheckCircle2, Clock, FileText, HardDrive, Image, Mail, Users } from 'lucide-vue-next';
+import {
+    AlertTriangle,
+    ArrowRightLeft,
+    CheckCircle2,
+    Clock,
+    FileText,
+    HardDrive,
+    Image,
+    Mail,
+    Users,
+} from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -56,44 +66,44 @@ function timeAgo(dateStr: string): string {
     const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
 
     if (diff < 60) {
-return `${diff}s ago`;
-}
+        return `${diff}s ago`;
+    }
 
     if (diff < 3600) {
-return `${Math.floor(diff / 60)}m ago`;
-}
+        return `${Math.floor(diff / 60)}m ago`;
+    }
 
     if (diff < 86400) {
-return `${Math.floor(diff / 3600)}h ago`;
-}
+        return `${Math.floor(diff / 3600)}h ago`;
+    }
 
     return `${Math.floor(diff / 86400)}d ago`;
 }
 
 function healthVariant(status: HealthCheck['status'] | SystemHealth['status']) {
     if (status === 'fail') {
-return 'destructive';
-}
+        return 'destructive';
+    }
 
     if (status === 'warning') {
-return 'outline';
-}
+        return 'outline';
+    }
 
     return 'default';
 }
 
 function healthIcon(check: HealthCheck) {
     if (check.key === 'storage') {
-return HardDrive;
-}
+        return HardDrive;
+    }
 
     if (check.key === 'mail') {
-return Mail;
-}
+        return Mail;
+    }
 
     if (check.status === 'ok') {
-return CheckCircle2;
-}
+        return CheckCircle2;
+    }
 
     return AlertTriangle;
 }
@@ -106,68 +116,115 @@ return CheckCircle2;
         <!-- Stat cards -->
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
-                <CardHeader class="flex flex-row items-center justify-between pb-2">
-                    <CardTitle class="text-sm font-medium text-muted-foreground">Total Pages</CardTitle>
+                <CardHeader
+                    class="flex flex-row items-center justify-between pb-2"
+                >
+                    <CardTitle class="text-sm font-medium text-muted-foreground"
+                        >Total Pages</CardTitle
+                    >
                     <FileText class="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <p class="text-3xl font-bold">{{ props.stats.total_pages }}</p>
+                    <p class="text-3xl font-bold">
+                        {{ props.stats.total_pages }}
+                    </p>
                     <p class="mt-1 text-xs text-muted-foreground">
-                        {{ props.stats.published_pages }} published &middot; {{ props.stats.draft_pages }} drafts
+                        {{ props.stats.published_pages }} published &middot;
+                        {{ props.stats.draft_pages }} drafts
                     </p>
                 </CardContent>
             </Card>
 
             <Card>
-                <CardHeader class="flex flex-row items-center justify-between pb-2">
-                    <CardTitle class="text-sm font-medium text-muted-foreground">Media Files</CardTitle>
+                <CardHeader
+                    class="flex flex-row items-center justify-between pb-2"
+                >
+                    <CardTitle class="text-sm font-medium text-muted-foreground"
+                        >Media Files</CardTitle
+                    >
                     <Image class="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <p class="text-3xl font-bold">{{ props.stats.media_files }}</p>
-                    <p class="mt-1 text-xs text-muted-foreground">In media library</p>
+                    <p class="text-3xl font-bold">
+                        {{ props.stats.media_files }}
+                    </p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                        In media library
+                    </p>
                 </CardContent>
             </Card>
 
             <Card>
-                <CardHeader class="flex flex-row items-center justify-between pb-2">
-                    <CardTitle class="text-sm font-medium text-muted-foreground">Users</CardTitle>
+                <CardHeader
+                    class="flex flex-row items-center justify-between pb-2"
+                >
+                    <CardTitle class="text-sm font-medium text-muted-foreground"
+                        >Users</CardTitle
+                    >
                     <Users class="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <p class="text-3xl font-bold">{{ props.stats.total_users }}</p>
-                    <p class="mt-1 text-xs text-muted-foreground">Registered accounts</p>
+                    <p class="text-3xl font-bold">
+                        {{ props.stats.total_users }}
+                    </p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                        Registered accounts
+                    </p>
                 </CardContent>
             </Card>
 
             <Card>
-                <CardHeader class="flex flex-row items-center justify-between pb-2">
-                    <CardTitle class="text-sm font-medium text-muted-foreground">Redirects</CardTitle>
+                <CardHeader
+                    class="flex flex-row items-center justify-between pb-2"
+                >
+                    <CardTitle class="text-sm font-medium text-muted-foreground"
+                        >Redirects</CardTitle
+                    >
                     <ArrowRightLeft class="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <p class="text-3xl font-bold">{{ props.stats.total_redirects }}</p>
-                    <p class="mt-1 text-xs text-muted-foreground">{{ props.stats.active_redirects }} active</p>
+                    <p class="text-3xl font-bold">
+                        {{ props.stats.total_redirects }}
+                    </p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                        {{ props.stats.active_redirects }} active
+                    </p>
                 </CardContent>
             </Card>
         </div>
 
         <Card>
-            <CardHeader class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <CardHeader
+                class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+            >
                 <div>
-                    <CardTitle class="text-base font-semibold">System Health</CardTitle>
+                    <CardTitle class="text-base font-semibold"
+                        >System Health</CardTitle
+                    >
                     <p class="text-sm text-muted-foreground">
                         Checked {{ timeAgo(props.systemHealth.checked_at) }}
                     </p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
-                    <Badge :variant="healthVariant(props.systemHealth.status)" class="capitalize">
+                    <Badge
+                        :variant="healthVariant(props.systemHealth.status)"
+                        class="capitalize"
+                    >
                         {{ props.systemHealth.status }}
                     </Badge>
-                    <Badge variant="outline">{{ props.systemHealth.summary.ok }} healthy</Badge>
-                    <Badge variant="outline">{{ props.systemHealth.summary.warning }} warnings</Badge>
-                    <Badge variant="outline">{{ props.systemHealth.summary.fail }} failures</Badge>
+                    <Badge variant="outline"
+                        >{{ props.systemHealth.summary.ok }} healthy</Badge
+                    >
+                    <Badge variant="outline"
+                        >{{
+                            props.systemHealth.summary.warning
+                        }}
+                        warnings</Badge
+                    >
+                    <Badge variant="outline"
+                        >{{ props.systemHealth.summary.fail }} failures</Badge
+                    >
                 </div>
             </CardHeader>
 
@@ -179,11 +236,17 @@ return CheckCircle2;
                 >
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex items-center gap-2">
-                            <component :is="healthIcon(check)" class="h-4 w-4 text-muted-foreground" />
+                            <component
+                                :is="healthIcon(check)"
+                                class="h-4 w-4 text-muted-foreground"
+                            />
                             <h3 class="font-medium">{{ check.label }}</h3>
                         </div>
 
-                        <Badge :variant="healthVariant(check.status)" class="capitalize">
+                        <Badge
+                            :variant="healthVariant(check.status)"
+                            class="capitalize"
+                        >
                             {{ check.status }}
                         </Badge>
                     </div>
@@ -201,7 +264,9 @@ return CheckCircle2;
                             :key="key"
                             class="flex gap-2"
                         >
-                            <dt class="font-medium capitalize">{{ String(key).replaceAll('_', ' ') }}:</dt>
+                            <dt class="font-medium capitalize">
+                                {{ String(key).replaceAll('_', ' ') }}:
+                            </dt>
                             <dd class="break-all">{{ value }}</dd>
                         </div>
                     </dl>
@@ -213,10 +278,15 @@ return CheckCircle2;
         <Card>
             <CardHeader class="flex flex-row items-center gap-2 pb-3">
                 <Clock class="h-4 w-4 text-muted-foreground" />
-                <CardTitle class="text-base font-semibold">Recent Activity</CardTitle>
+                <CardTitle class="text-base font-semibold"
+                    >Recent Activity</CardTitle
+                >
             </CardHeader>
             <CardContent class="p-0">
-                <div v-if="props.recentRevisions.length === 0" class="px-6 py-8 text-center text-sm text-muted-foreground">
+                <div
+                    v-if="props.recentRevisions.length === 0"
+                    class="px-6 py-8 text-center text-sm text-muted-foreground"
+                >
                     No revisions yet.
                 </div>
                 <ul v-else class="divide-y">
@@ -233,13 +303,21 @@ return CheckCircle2;
                             >
                                 {{ rev.page.title }}
                             </Link>
-                            <span v-else class="truncate font-medium text-muted-foreground">Deleted page</span>
+                            <span
+                                v-else
+                                class="truncate font-medium text-muted-foreground"
+                                >Deleted page</span
+                            >
                             <p class="truncate text-xs text-muted-foreground">
                                 {{ rev.label }}
-                                <span v-if="rev.user">&middot; {{ rev.user.name }}</span>
+                                <span v-if="rev.user"
+                                    >&middot; {{ rev.user.name }}</span
+                                >
                             </p>
                         </div>
-                        <span class="shrink-0 text-xs text-muted-foreground">{{ timeAgo(rev.created_at) }}</span>
+                        <span class="shrink-0 text-xs text-muted-foreground">{{
+                            timeAgo(rev.created_at)
+                        }}</span>
                     </li>
                 </ul>
             </CardContent>

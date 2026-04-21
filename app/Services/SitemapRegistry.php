@@ -26,6 +26,6 @@ class SitemapRegistry
      */
     public function getAllUrls(): Collection
     {
-        return $this->collectors->flatMap(fn($collector) => $collector());
+        return $this->collectors->flatMap(fn ($collector) => $collector());
     }
 }

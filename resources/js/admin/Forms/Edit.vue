@@ -2,10 +2,16 @@
 import { router, useForm } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import { useLocalStorage } from '@vueuse/core';
-import { ArrowLeft, ClipboardList, Loader2, PanelRight, Trash2 } from 'lucide-vue-next';
+import {
+    ArrowLeft,
+    ClipboardList,
+    Loader2,
+    PanelRight,
+    Trash2,
+} from 'lucide-vue-next';
 import { computed, provide, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
-import type {AvailableBlock} from '@/composables/useBlockSchemas';
+import type { AvailableBlock } from '@/composables/useBlockSchemas';
 import BuilderLayout from '@/layouts/BuilderLayout.vue';
 import admin from '@/routes/admin';
 import type { Block } from '@/types/blocks';
@@ -29,6 +35,10 @@ interface FormAction {
     fields?: FormActionField[];
 }
 
+type FormActionConfigValue = string | number | boolean | null;
+type FormActionConfig = Record<string, FormActionConfigValue>;
+type FormEditorPayload = Omit<FormEditData, 'id' | 'form_submissions_count'>;
+
 interface FormEditData {
     id?: number;
     name: string;
@@ -36,7 +46,7 @@ interface FormEditData {
     description: string;
     blocks: Block[];
     submission_action: string;
-    action_config: Record<string, unknown>;
+    action_config: FormActionConfig;
     form_submissions_count?: number;
 }
 
@@ -52,13 +62,13 @@ const sidebarOpen = ref(true);
 const leftWidth = useLocalStorage('form-builder-left-width', 208);
 const rightWidth = useLocalStorage('form-builder-right-width', 320);
 
-const form = useForm({
+const form = useForm<FormEditorPayload>({
     name: props.form?.name ?? '',
     slug: props.form?.slug ?? '',
     description: props.form?.description ?? '',
     blocks: (props.form?.blocks ?? []) as Block[],
     submission_action: props.form?.submission_action ?? 'core.store-submission',
-    action_config: (props.form?.action_config ?? {}) as Record<string, unknown>,
+    action_config: (props.form?.action_config ?? {}) as FormActionConfig,
 });
 
 function startResize(side: 'left' | 'right', e: MouseEvent) {
@@ -69,14 +79,15 @@ function startResize(side: 'left' | 'right', e: MouseEvent) {
     document.body.style.userSelect = 'none';
 
     function onMove(event: MouseEvent) {
-        const delta = side === 'left' ? event.clientX - startX : startX - event.clientX;
+        const delta =
+            side === 'left' ? event.clientX - startX : startX - event.clientX;
         const newWidth = Math.max(160, Math.min(520, startWidth + delta));
 
         if (side === 'left') {
-leftWidth.value = newWidth;
-} else {
-rightWidth.value = newWidth;
-}
+            leftWidth.value = newWidth;
+        } else {
+            rightWidth.value = newWidth;
+        }
     }
 
     function onUp() {
@@ -101,19 +112,30 @@ function slugify(value: string) {
         .replace(/-+/g, '-');
 }
 
-watch(() => form.name, (value) => {
-    if (!slugTouched.value) {
-        form.slug = slugify(value);
-    }
-});
+watch(
+    () => form.name,
+    (value) => {
+        if (!slugTouched.value) {
+            form.slug = slugify(value);
+        }
+    },
+);
 
-function updateBlocksById(blocks: Block[], id: string, newData: Record<string, unknown>): Block[] {
+function updateBlocksById(
+    blocks: Block[],
+    id: string,
+    newData: Record<string, unknown>,
+): Block[] {
     return blocks.map((block) => {
         if (block.id === id) {
             return { ...block, data: newData };
         }
 
-        if (block.type !== 'columns' || typeof block.data !== 'object' || block.data === null) {
+        if (
+            block.type !== 'columns' ||
+            typeof block.data !== 'object' ||
+            block.data === null
+        ) {
             return block;
         }
 
@@ -141,7 +163,11 @@ function removeBlocksById(blocks: Block[], id: string): Block[] {
     return blocks
         .filter((block) => block.id !== id)
         .map((block) => {
-            if (block.type !== 'columns' || typeof block.data !== 'object' || block.data === null) {
+            if (
+                block.type !== 'columns' ||
+                typeof block.data !== 'object' ||
+                block.data === null
+            ) {
                 return block;
             }
 
@@ -171,11 +197,17 @@ function findBlockById(blocks: Block[], id: string): Block | null {
             return block;
         }
 
-        if (block.type !== 'columns' || typeof block.data !== 'object' || block.data === null) {
+        if (
+            block.type !== 'columns' ||
+            typeof block.data !== 'object' ||
+            block.data === null
+        ) {
             continue;
         }
 
-        for (const [key, value] of Object.entries(block.data as Record<string, unknown>)) {
+        for (const [key, value] of Object.entries(
+            block.data as Record<string, unknown>,
+        )) {
             if (!/^col_\d+$/.test(key) || !Array.isArray(value)) {
                 continue;
             }
@@ -204,7 +236,9 @@ function updateBlockData(id: string, data: Record<string, unknown>) {
 }
 
 function insertBlock(index: number, type: string) {
-    const definition = props.availableBlocks.find((block) => block.type === type);
+    const definition = props.availableBlocks.find(
+        (block) => block.type === type,
+    );
     const newBlock: Block = {
         id: crypto.randomUUID(),
         type,
@@ -235,7 +269,9 @@ function moveBlock(id: string, direction: 'up' | 'down') {
     form.blocks = next;
 }
 
-const selectedBlock = computed(() => findBlockById(form.blocks, selectedBlockId.value ?? '') ?? null);
+const selectedBlock = computed(
+    () => findBlockById(form.blocks, selectedBlockId.value ?? '') ?? null,
+);
 
 provide('builderCtx', {
     selectedBlockId,
@@ -246,24 +282,37 @@ provide('builderCtx', {
     removeBlock,
 });
 
-function updateFormField(field: keyof typeof form, value: unknown) {
-    (form as unknown as Record<string, unknown>)[field] = value;
+function updateFormField(field: keyof FormEditorPayload, value: unknown) {
+    (form as unknown as FormEditorPayload)[field] = value as never;
 }
 
 function save() {
     if (isEditing.value) {
-        form.put(admin.forms.update.url(props.form!.id!), { preserveScroll: true });
+        form.put(admin.forms.update.url(props.form!.id!), {
+            preserveScroll: true,
+        });
     } else {
         form.post(admin.forms.store.url(), { preserveScroll: true });
     }
 }
 
 function deleteForm() {
-    if (!props.form || !confirm(`Delete "${props.form.name}"? All submissions will also be deleted.`)) {
+    if (
+        !props.form ||
+        !confirm(
+            `Delete "${props.form.name}"? All submissions will also be deleted.`,
+        )
+    ) {
         return;
     }
 
-    router.delete(admin.forms.destroy.url(props.form.id));
+    const formId = props.form.id;
+
+    if (!formId) {
+        return;
+    }
+
+    router.delete(admin.forms.destroy.url(formId));
 }
 </script>
 
@@ -282,10 +331,19 @@ function deleteForm() {
 
             <div class="flex min-w-0 flex-1 items-center gap-2">
                 <div class="min-w-0 flex-1">
-                    <p class="truncate text-sm font-medium">{{ form.name || 'Untitled form' }}</p>
-                    <p class="truncate text-xs font-mono text-muted-foreground">/{{ form.slug || 'form-slug' }}</p>
+                    <p class="truncate text-sm font-medium">
+                        {{ form.name || 'Untitled form' }}
+                    </p>
+                    <p class="truncate font-mono text-xs text-muted-foreground">
+                        /{{ form.slug || 'form-slug' }}
+                    </p>
                 </div>
-                <p v-if="form.errors.blocks" class="hidden text-xs text-destructive sm:block">{{ form.errors.blocks }}</p>
+                <p
+                    v-if="form.errors.blocks"
+                    class="hidden text-xs text-destructive sm:block"
+                >
+                    {{ form.errors.blocks }}
+                </p>
             </div>
 
             <Button
@@ -298,7 +356,9 @@ function deleteForm() {
                 <Link :href="admin.forms.submissions.index.url(props.form.id)">
                     <ClipboardList class="h-3.5 w-3.5" />
                     Submissions
-                    <span class="rounded-full bg-muted px-1.5 py-0.5 text-[10px] leading-none">
+                    <span
+                        class="rounded-full bg-muted px-1.5 py-0.5 text-[10px] leading-none"
+                    >
                         {{ props.form.form_submissions_count ?? 0 }}
                     </span>
                 </Link>
@@ -321,7 +381,10 @@ function deleteForm() {
                 :disabled="form.processing"
                 @click="save"
             >
-                <Loader2 v-if="form.processing" class="h-3.5 w-3.5 animate-spin" />
+                <Loader2
+                    v-if="form.processing"
+                    class="h-3.5 w-3.5 animate-spin"
+                />
                 Save
             </Button>
 
@@ -329,7 +392,11 @@ function deleteForm() {
 
             <button
                 class="flex h-8 w-8 items-center justify-center rounded-md transition-colors"
-                :class="sidebarOpen ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
+                :class="
+                    sidebarOpen
+                        ? 'bg-accent text-foreground'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                "
                 title="Toggle settings panel"
                 @click="sidebarOpen = !sidebarOpen"
             >
@@ -339,7 +406,10 @@ function deleteForm() {
             <div class="mx-1" />
         </template>
 
-        <div class="shrink-0 overflow-hidden" :style="{ width: leftWidth + 'px' }">
+        <div
+            class="shrink-0 overflow-hidden"
+            :style="{ width: leftWidth + 'px' }"
+        >
             <BlockPalette :available-blocks="availableBlocks" />
         </div>
 
@@ -374,7 +444,11 @@ function deleteForm() {
             @mousedown.prevent="startResize('right', $event)"
         />
 
-        <div v-if="sidebarOpen" class="shrink-0 overflow-hidden" :style="{ width: rightWidth + 'px' }">
+        <div
+            v-if="sidebarOpen"
+            class="shrink-0 overflow-hidden"
+            :style="{ width: rightWidth + 'px' }"
+        >
             <FormSettingsPanel
                 :form="form"
                 :selected-block="selectedBlock"

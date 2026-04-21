@@ -20,7 +20,7 @@ class FormField extends Model
 
     protected $casts = [
         'required' => 'boolean',
-        'options'  => 'array',
+        'options' => 'array',
     ];
 
     public function form(): BelongsTo

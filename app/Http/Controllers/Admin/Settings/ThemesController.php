@@ -18,14 +18,14 @@ class ThemesController extends Controller
             $config = $theme->getConfig();
 
             return [
-                'id'          => $theme->id,
-                'name'        => $theme->name,
-                'slug'        => $theme->slug,
-                'version'     => $theme->version,
-                'is_active'   => $theme->is_active,
+                'id' => $theme->id,
+                'name' => $theme->name,
+                'slug' => $theme->slug,
+                'version' => $theme->version,
+                'is_active' => $theme->is_active,
                 'description' => $config['description'] ?? null,
-                'author'      => $config['author'] ?? null,
-                'preview'     => $config['preview'] ?? null,
+                'author' => $config['author'] ?? null,
+                'preview' => $config['preview'] ?? null,
             ];
         });
 

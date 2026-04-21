@@ -19,9 +19,9 @@ class RolesController extends Controller
         $roles = Role::with('permissions')
             ->orderBy('name')
             ->get()
-            ->map(fn(Role $role) => [
-                'id'          => $role->id,
-                'name'        => $role->name,
+            ->map(fn (Role $role) => [
+                'id' => $role->id,
+                'name' => $role->name,
                 'permissions' => $role->permissions->pluck('name')->sort()->values(),
                 'users_count' => $role->users()->count(),
             ]);
@@ -29,7 +29,7 @@ class RolesController extends Controller
         $permissions = Permission::orderBy('name')->pluck('name');
 
         return Inertia::render('Roles/Index', [
-            'roles'       => $roles,
+            'roles' => $roles,
             'permissions' => $permissions,
         ]);
     }
@@ -39,8 +39,8 @@ class RolesController extends Controller
         $this->authorize('manage settings');
 
         $validated = $request->validate([
-            'name'          => ['required', 'string', 'max:64', 'unique:roles,name'],
-            'permissions'   => ['array'],
+            'name' => ['required', 'string', 'max:64', 'unique:roles,name'],
+            'permissions' => ['array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
@@ -59,7 +59,7 @@ class RolesController extends Controller
         }
 
         $validated = $request->validate([
-            'permissions'   => ['array'],
+            'permissions' => ['array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 

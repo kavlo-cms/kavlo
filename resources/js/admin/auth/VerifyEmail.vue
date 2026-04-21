@@ -13,7 +13,10 @@ const form = useForm({});
 <template>
     <Head title="Verify email" />
 
-    <AuthLayout title="Verify your email" description="Check your inbox for a verification link before continuing.">
+    <AuthLayout
+        title="Verify your email"
+        description="Check your inbox for a verification link before continuing."
+    >
         <div
             v-if="status === 'verification-link-sent'"
             class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
@@ -22,7 +25,11 @@ const form = useForm({});
         </div>
 
         <div class="space-y-4">
-            <Button class="w-full" :disabled="form.processing" @click="form.post('/email/verification-notification')">
+            <Button
+                class="w-full"
+                :disabled="form.processing"
+                @click="form.post('/email/verification-notification')"
+            >
                 Resend verification email
             </Button>
 

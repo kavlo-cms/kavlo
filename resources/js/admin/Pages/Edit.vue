@@ -96,7 +96,7 @@ interface ThemeConfig {
 
 const props = defineProps<{
     page: PageData;
-    pages: { id: number; title: string }[];
+    pages: { id: number; title: string; slug: string }[];
     revisions: PageRevision[];
     availableBlocks: AvailableBlock[];
     contentContext: ContentContext;

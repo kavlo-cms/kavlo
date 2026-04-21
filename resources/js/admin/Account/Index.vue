@@ -1,8 +1,21 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
-import { KeyRound, RefreshCw, Save, ShieldCheck, Trash2, User as UserIcon } from 'lucide-vue-next';
+import {
+    KeyRound,
+    RefreshCw,
+    Save,
+    ShieldCheck,
+    Trash2,
+    User as UserIcon,
+} from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -56,7 +69,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 // ── Profile form ────────────────────────────────────────────────────────────
 const profileForm = useForm({
-    name:  props.user.name,
+    name: props.user.name,
     email: props.user.email,
 });
 
@@ -66,8 +79,8 @@ function saveProfile() {
 
 // ── Password form ────────────────────────────────────────────────────────────
 const passwordForm = useForm({
-    current_password:      '',
-    password:              '',
+    current_password: '',
+    password: '',
     password_confirmation: '',
 });
 
@@ -92,18 +105,26 @@ function toggleAbility(ability: string, checked: boolean) {
             apiKeyForm.abilities.push(ability);
         }
 
-        if (ability === 'graphql.preview' && !apiKeyForm.abilities.includes('graphql.read')) {
+        if (
+            ability === 'graphql.preview' &&
+            !apiKeyForm.abilities.includes('graphql.read')
+        ) {
             apiKeyForm.abilities.push('graphql.read');
         }
 
         return;
     }
 
-    if (ability === 'graphql.read' && apiKeyForm.abilities.includes('graphql.preview')) {
+    if (
+        ability === 'graphql.read' &&
+        apiKeyForm.abilities.includes('graphql.preview')
+    ) {
         return;
     }
 
-    apiKeyForm.abilities = apiKeyForm.abilities.filter((value) => value !== ability);
+    apiKeyForm.abilities = apiKeyForm.abilities.filter(
+        (value) => value !== ability,
+    );
 }
 
 function createApiKey() {
@@ -120,9 +141,13 @@ function revokeApiKey(id: number) {
 }
 
 function rotateApiKey(id: number) {
-    router.post(`${apiKeysBaseUrl}/${id}/rotate`, {}, {
-        preserveScroll: true,
-    });
+    router.post(
+        `${apiKeysBaseUrl}/${id}/rotate`,
+        {},
+        {
+            preserveScroll: true,
+        },
+    );
 }
 
 function formatDate(value: string | null) {
@@ -141,13 +166,14 @@ function statusClass(status: AccountApiKey['status']) {
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-semibold tracking-tight">Account Settings</h1>
+            <h1 class="text-2xl font-semibold tracking-tight">
+                Account Settings
+            </h1>
         </div>
 
         <div class="grid gap-6 lg:grid-cols-3">
             <!-- Main column -->
             <div class="space-y-6 lg:col-span-2">
-
                 <!-- Profile -->
                 <Card>
                     <CardHeader>
@@ -155,7 +181,10 @@ function statusClass(status: AccountApiKey['status']) {
                             <UserIcon class="h-4 w-4" />
                             Profile
                         </CardTitle>
-                        <CardDescription>Update your name and email address.</CardDescription>
+                        <CardDescription
+                            >Update your name and email
+                            address.</CardDescription
+                        >
                     </CardHeader>
                     <CardContent>
                         <form @submit.prevent="saveProfile" class="space-y-4">
@@ -167,7 +196,10 @@ function statusClass(status: AccountApiKey['status']) {
                                     placeholder="Your name"
                                     autocomplete="name"
                                 />
-                                <p v-if="profileForm.errors.name" class="text-sm text-destructive">
+                                <p
+                                    v-if="profileForm.errors.name"
+                                    class="text-sm text-destructive"
+                                >
                                     {{ profileForm.errors.name }}
                                 </p>
                             </div>
@@ -181,7 +213,10 @@ function statusClass(status: AccountApiKey['status']) {
                                     placeholder="you@example.com"
                                     autocomplete="email"
                                 />
-                                <p v-if="profileForm.errors.email" class="text-sm text-destructive">
+                                <p
+                                    v-if="profileForm.errors.email"
+                                    class="text-sm text-destructive"
+                                >
                                     {{ profileForm.errors.email }}
                                 </p>
                                 <p
@@ -193,7 +228,10 @@ function statusClass(status: AccountApiKey['status']) {
                             </div>
 
                             <div class="flex justify-end pt-1">
-                                <Button type="submit" :disabled="profileForm.processing">
+                                <Button
+                                    type="submit"
+                                    :disabled="profileForm.processing"
+                                >
                                     <Save class="mr-2 h-4 w-4" />
                                     Save Profile
                                 </Button>
@@ -209,19 +247,26 @@ function statusClass(status: AccountApiKey['status']) {
                             <KeyRound class="h-4 w-4" />
                             Change Password
                         </CardTitle>
-                        <CardDescription>Use a strong, unique password.</CardDescription>
+                        <CardDescription
+                            >Use a strong, unique password.</CardDescription
+                        >
                     </CardHeader>
                     <CardContent>
                         <form @submit.prevent="savePassword" class="space-y-4">
                             <div class="space-y-1.5">
-                                <Label for="current_password">Current Password</Label>
+                                <Label for="current_password"
+                                    >Current Password</Label
+                                >
                                 <Input
                                     id="current_password"
                                     v-model="passwordForm.current_password"
                                     type="password"
                                     autocomplete="current-password"
                                 />
-                                <p v-if="passwordForm.errors.current_password" class="text-sm text-destructive">
+                                <p
+                                    v-if="passwordForm.errors.current_password"
+                                    class="text-sm text-destructive"
+                                >
                                     {{ passwordForm.errors.current_password }}
                                 </p>
                             </div>
@@ -234,13 +279,18 @@ function statusClass(status: AccountApiKey['status']) {
                                     type="password"
                                     autocomplete="new-password"
                                 />
-                                <p v-if="passwordForm.errors.password" class="text-sm text-destructive">
+                                <p
+                                    v-if="passwordForm.errors.password"
+                                    class="text-sm text-destructive"
+                                >
                                     {{ passwordForm.errors.password }}
                                 </p>
                             </div>
 
                             <div class="space-y-1.5">
-                                <Label for="password_confirmation">Confirm New Password</Label>
+                                <Label for="password_confirmation"
+                                    >Confirm New Password</Label
+                                >
                                 <Input
                                     id="password_confirmation"
                                     v-model="passwordForm.password_confirmation"
@@ -250,7 +300,10 @@ function statusClass(status: AccountApiKey['status']) {
                             </div>
 
                             <div class="flex justify-end pt-1">
-                                <Button type="submit" :disabled="passwordForm.processing">
+                                <Button
+                                    type="submit"
+                                    :disabled="passwordForm.processing"
+                                >
                                     <Save class="mr-2 h-4 w-4" />
                                     Update Password
                                 </Button>
@@ -266,21 +319,38 @@ function statusClass(status: AccountApiKey['status']) {
                             API Keys
                         </CardTitle>
                         <CardDescription>
-                            Create personal keys for DataHub and GraphQL access. Secrets are shown only once.
+                            Create personal keys for DataHub and GraphQL access.
+                            Secrets are shown only once.
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-6">
-                        <div v-if="generatedApiKey" class="space-y-2 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-4">
+                        <div
+                            v-if="generatedApiKey"
+                            class="space-y-2 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-4"
+                        >
                             <div>
-                                <p class="text-sm font-medium">New API key created</p>
+                                <p class="text-sm font-medium">
+                                    New API key created
+                                </p>
                                 <p class="text-sm text-muted-foreground">
-                                    Copy this token now. It will not be shown again for <span class="font-medium">{{ generatedApiKey.name }}</span>.
+                                    Copy this token now. It will not be shown
+                                    again for
+                                    <span class="font-medium">{{
+                                        generatedApiKey.name
+                                    }}</span
+                                    >.
                                 </p>
                             </div>
-                            <Input :model-value="generatedApiKey.token" readonly />
+                            <Input
+                                :model-value="generatedApiKey.token"
+                                readonly
+                            />
                         </div>
 
-                        <form @submit.prevent="createApiKey" class="space-y-4 rounded-lg border p-4">
+                        <form
+                            @submit.prevent="createApiKey"
+                            class="space-y-4 rounded-lg border p-4"
+                        >
                             <div class="space-y-1.5">
                                 <Label for="api_key_name">Key name</Label>
                                 <Input
@@ -288,13 +358,16 @@ function statusClass(status: AccountApiKey['status']) {
                                     v-model="apiKeyForm.name"
                                     placeholder="DataHub integration"
                                 />
-                                <p v-if="apiKeyForm.errors.name" class="text-sm text-destructive">
+                                <p
+                                    v-if="apiKeyForm.errors.name"
+                                    class="text-sm text-destructive"
+                                >
                                     {{ apiKeyForm.errors.name }}
                                 </p>
                             </div>
 
-                             <div class="space-y-3">
-                                 <Label>Scopes</Label>
+                            <div class="space-y-3">
+                                <Label>Scopes</Label>
                                 <div
                                     v-for="ability in apiKeyAbilities"
                                     :key="ability.key"
@@ -302,36 +375,66 @@ function statusClass(status: AccountApiKey['status']) {
                                 >
                                     <Checkbox
                                         :id="ability.key"
-                                        :checked="apiKeyForm.abilities.includes(ability.key)"
-                                        @update:checked="(value) => toggleAbility(ability.key, !!value)"
+                                        :checked="
+                                            apiKeyForm.abilities.includes(
+                                                ability.key,
+                                            )
+                                        "
+                                        @update:checked="
+                                            (value: boolean) =>
+                                                toggleAbility(
+                                                    ability.key,
+                                                    value,
+                                                )
+                                        "
                                     />
                                     <div class="space-y-1">
-                                        <Label :for="ability.key" class="font-medium">{{ ability.label }}</Label>
-                                        <p class="text-sm text-muted-foreground">{{ ability.description }}</p>
+                                        <Label
+                                            :for="ability.key"
+                                            class="font-medium"
+                                            >{{ ability.label }}</Label
+                                        >
+                                        <p
+                                            class="text-sm text-muted-foreground"
+                                        >
+                                            {{ ability.description }}
+                                        </p>
                                     </div>
                                 </div>
-                                 <p v-if="apiKeyForm.errors.abilities" class="text-sm text-destructive">
-                                     {{ apiKeyForm.errors.abilities }}
-                                 </p>
-                             </div>
+                                <p
+                                    v-if="apiKeyForm.errors.abilities"
+                                    class="text-sm text-destructive"
+                                >
+                                    {{ apiKeyForm.errors.abilities }}
+                                </p>
+                            </div>
 
                             <div class="space-y-1.5">
-                                <Label for="api_key_expires_at">Expires at</Label>
+                                <Label for="api_key_expires_at"
+                                    >Expires at</Label
+                                >
                                 <Input
                                     id="api_key_expires_at"
                                     v-model="apiKeyForm.expires_at"
                                     type="datetime-local"
                                 />
                                 <p class="text-xs text-muted-foreground">
-                                    Leave blank to keep the key active until it is revoked.
+                                    Leave blank to keep the key active until it
+                                    is revoked.
                                 </p>
-                                <p v-if="apiKeyForm.errors.expires_at" class="text-sm text-destructive">
+                                <p
+                                    v-if="apiKeyForm.errors.expires_at"
+                                    class="text-sm text-destructive"
+                                >
                                     {{ apiKeyForm.errors.expires_at }}
                                 </p>
                             </div>
 
                             <div class="flex justify-end">
-                                <Button type="submit" :disabled="apiKeyForm.processing">
+                                <Button
+                                    type="submit"
+                                    :disabled="apiKeyForm.processing"
+                                >
                                     <KeyRound class="mr-2 h-4 w-4" />
                                     Create API Key
                                 </Button>
@@ -340,11 +443,18 @@ function statusClass(status: AccountApiKey['status']) {
 
                         <div class="space-y-3">
                             <div class="flex items-center justify-between">
-                                <h3 class="text-sm font-medium">Existing keys</h3>
-                                <p class="text-sm text-muted-foreground">{{ apiKeys.length }} total</p>
+                                <h3 class="text-sm font-medium">
+                                    Existing keys
+                                </h3>
+                                <p class="text-sm text-muted-foreground">
+                                    {{ apiKeys.length }} total
+                                </p>
                             </div>
 
-                            <div v-if="apiKeys.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                            <div
+                                v-if="apiKeys.length === 0"
+                                class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground"
+                            >
                                 No API keys created yet.
                             </div>
 
@@ -354,18 +464,37 @@ function statusClass(status: AccountApiKey['status']) {
                                     :key="apiKey.id"
                                     class="rounded-lg border p-4"
                                 >
-                                    <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                                    <div
+                                        class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"
+                                    >
                                         <div class="space-y-2">
-                                            <div class="flex items-center gap-2">
-                                                <p class="font-medium">{{ apiKey.name }}</p>
+                                            <div
+                                                class="flex items-center gap-2"
+                                            >
+                                                <p class="font-medium">
+                                                    {{ apiKey.name }}
+                                                </p>
                                                 <span
                                                     class="rounded-full px-2 py-0.5 text-xs"
-                                                    :class="statusClass(apiKey.status)"
+                                                    :class="
+                                                        statusClass(
+                                                            apiKey.status,
+                                                        )
+                                                    "
                                                 >
-                                                    {{ apiKey.status.charAt(0).toUpperCase() + apiKey.status.slice(1) }}
+                                                    {{
+                                                        apiKey.status
+                                                            .charAt(0)
+                                                            .toUpperCase() +
+                                                        apiKey.status.slice(1)
+                                                    }}
                                                 </span>
                                             </div>
-                                            <p class="font-mono text-xs text-muted-foreground">{{ apiKey.key_prefix }}...</p>
+                                            <p
+                                                class="font-mono text-xs text-muted-foreground"
+                                            >
+                                                {{ apiKey.key_prefix }}...
+                                            </p>
                                             <div class="flex flex-wrap gap-2">
                                                 <span
                                                     v-for="ability in apiKey.abilities"
@@ -375,21 +504,55 @@ function statusClass(status: AccountApiKey['status']) {
                                                     {{ ability }}
                                                 </span>
                                             </div>
-                                            <div class="grid gap-1 text-sm text-muted-foreground">
-                                                <p>Created: {{ formatDate(apiKey.created_at) }}</p>
-                                                <p>Last used: {{ formatDate(apiKey.last_used_at) }}</p>
-                                                <p>Last IP: {{ apiKey.last_used_ip ?? 'Unknown' }}</p>
-                                                <p>Expires: {{ formatDate(apiKey.expires_at) }}</p>
+                                            <div
+                                                class="grid gap-1 text-sm text-muted-foreground"
+                                            >
+                                                <p>
+                                                    Created:
+                                                    {{
+                                                        formatDate(
+                                                            apiKey.created_at,
+                                                        )
+                                                    }}
+                                                </p>
+                                                <p>
+                                                    Last used:
+                                                    {{
+                                                        formatDate(
+                                                            apiKey.last_used_at,
+                                                        )
+                                                    }}
+                                                </p>
+                                                <p>
+                                                    Last IP:
+                                                    {{
+                                                        apiKey.last_used_ip ??
+                                                        'Unknown'
+                                                    }}
+                                                </p>
+                                                <p>
+                                                    Expires:
+                                                    {{
+                                                        formatDate(
+                                                            apiKey.expires_at,
+                                                        )
+                                                    }}
+                                                </p>
                                             </div>
                                         </div>
 
-                                        <div v-if="apiKey.status === 'active'" class="flex shrink-0 gap-2">
+                                        <div
+                                            v-if="apiKey.status === 'active'"
+                                            class="flex shrink-0 gap-2"
+                                        >
                                             <Button
                                                 type="button"
                                                 variant="outline"
                                                 @click="rotateApiKey(apiKey.id)"
                                             >
-                                                <RefreshCw class="mr-2 h-4 w-4" />
+                                                <RefreshCw
+                                                    class="mr-2 h-4 w-4"
+                                                />
                                                 Rotate
                                             </Button>
                                             <Button
@@ -413,7 +576,9 @@ function statusClass(status: AccountApiKey['status']) {
             <div class="space-y-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle class="text-sm font-medium">Account Info</CardTitle>
+                        <CardTitle class="text-sm font-medium"
+                            >Account Info</CardTitle
+                        >
                     </CardHeader>
                     <CardContent class="space-y-3 text-sm">
                         <div>
@@ -428,21 +593,37 @@ function statusClass(status: AccountApiKey['status']) {
                             <p class="text-muted-foreground">Email status</p>
                             <p
                                 class="font-medium"
-                                :class="user.email_verified_at ? 'text-green-500' : 'text-amber-500'"
+                                :class="
+                                    user.email_verified_at
+                                        ? 'text-green-500'
+                                        : 'text-amber-500'
+                                "
                             >
-                                {{ user.email_verified_at ? 'Verified' : 'Unverified' }}
+                                {{
+                                    user.email_verified_at
+                                        ? 'Verified'
+                                        : 'Unverified'
+                                }}
                             </p>
                         </div>
                         <div>
                             <p class="text-muted-foreground">Member since</p>
                             <p class="font-medium">
-                                {{ new Date(user.created_at).toLocaleDateString() }}
+                                {{
+                                    new Date(
+                                        user.created_at,
+                                    ).toLocaleDateString()
+                                }}
                             </p>
                         </div>
                         <div>
                             <p class="text-muted-foreground">Active API keys</p>
                             <p class="font-medium">
-                                {{ apiKeys.filter((apiKey) => !apiKey.revoked_at).length }}
+                                {{
+                                    apiKeys.filter(
+                                        (apiKey) => !apiKey.revoked_at,
+                                    ).length
+                                }}
                             </p>
                         </div>
                     </CardContent>

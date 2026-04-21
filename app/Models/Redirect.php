@@ -15,9 +15,9 @@ class Redirect extends Model
     ];
 
     protected $casts = [
-        'is_active'   => 'boolean',
-        'hits'        => 'integer',
-        'type'        => 'integer',
+        'is_active' => 'boolean',
+        'hits' => 'integer',
+        'type' => 'integer',
         'last_hit_at' => 'datetime',
     ];
 
@@ -28,7 +28,7 @@ class Redirect extends Model
     public static function normalizePath(string $path): string
     {
         $path = strtolower(parse_url($path, PHP_URL_PATH) ?? $path);
-        $path = '/' . ltrim($path, '/');
+        $path = '/'.ltrim($path, '/');
 
         return rtrim($path, '/') ?: '/';
     }
@@ -41,7 +41,7 @@ class Redirect extends Model
     {
         $normalized = self::normalizePath($path);
 
-        return Cache::rememberForever('redirect:' . $normalized, function () use ($normalized) {
+        return Cache::rememberForever('redirect:'.$normalized, function () use ($normalized) {
             return self::where('from_url', $normalized)
                 ->where('is_active', true)
                 ->first();
@@ -53,6 +53,6 @@ class Redirect extends Model
      */
     public function flushCache(): void
     {
-        Cache::forget('redirect:' . self::normalizePath($this->from_url));
+        Cache::forget('redirect:'.self::normalizePath($this->from_url));
     }
 }

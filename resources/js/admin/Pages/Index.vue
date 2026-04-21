@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { Link } from '@inertiajs/vue3';
-import { CheckCircle2, CheckSquare, FilePlus, Loader2, Trash2 } from 'lucide-vue-next';
+import {
+    CheckCircle2,
+    CheckSquare,
+    FilePlus,
+    Loader2,
+    Trash2,
+} from 'lucide-vue-next';
 import { computed, provide, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -23,7 +28,9 @@ interface FlatPage {
 
 const props = defineProps<{ pages: FlatPage[] }>();
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Pages', href: '/admin/pages' }];
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Pages', href: '/admin/pages' },
+];
 
 // ── Build tree from flat list ─────────────────────────────────────────────────
 
@@ -37,9 +44,12 @@ function hydrate(flat: FlatPage[], parentId: number | null = null): PageNode[] {
 const items = ref<PageNode[]>(hydrate(props.pages));
 
 // Re-hydrate the tree whenever Inertia reloads props (e.g. after delete/bulk action)
-watch(() => props.pages, (newPages) => {
-    items.value = hydrate(newPages);
-});
+watch(
+    () => props.pages,
+    (newPages) => {
+        items.value = hydrate(newPages);
+    },
+);
 
 // ── Selection (provided to tree) ─────────────────────────────────────────────
 
@@ -47,12 +57,22 @@ const selectedIds = ref<Set<number>>(new Set());
 
 function toggleSelected(id: number) {
     const s = new Set(selectedIds.value);
-    s.has(id) ? s.delete(id) : s.add(id);
+
+    if (s.has(id)) {
+        s.delete(id);
+    } else {
+        s.add(id);
+    }
+
     selectedIds.value = s;
 }
 
 const allIds = computed(() => props.pages.map((p) => p.id));
-const allSelected = computed(() => allIds.value.length > 0 && allIds.value.every((id) => selectedIds.value.has(id)));
+const allSelected = computed(
+    () =>
+        allIds.value.length > 0 &&
+        allIds.value.every((id) => selectedIds.value.has(id)),
+);
 
 function toggleAll() {
     selectedIds.value = allSelected.value ? new Set() : new Set(allIds.value);
@@ -68,11 +88,21 @@ const savedFlash = ref(false);
 let savedTimer: ReturnType<typeof setTimeout> | null = null;
 
 function getCsrf() {
-    return decodeURIComponent(document.cookie.split('; ').find((c) => c.startsWith('XSRF-TOKEN='))?.split('=')[1] ?? '');
+    return decodeURIComponent(
+        document.cookie
+            .split('; ')
+            .find((c) => c.startsWith('XSRF-TOKEN='))
+            ?.split('=')[1] ?? '',
+    );
 }
 
-function serializeTree(nodes: PageNode[]): { id: number; children: object[] }[] {
-    return nodes.map(({ id, children }) => ({ id, children: serializeTree(children) }));
+function serializeTree(
+    nodes: PageNode[],
+): { id: number; children: object[] }[] {
+    return nodes.map(({ id, children }) => ({
+        id,
+        children: serializeTree(children),
+    }));
 }
 
 async function autoSave() {
@@ -80,7 +110,10 @@ async function autoSave() {
     saving.value = true;
     const res = await fetch('/admin/pages/reorder', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': getCsrf() },
+        headers: {
+            'Content-Type': 'application/json',
+            'X-XSRF-TOKEN': getCsrf(),
+        },
         body: JSON.stringify({ pages: serializeTree(items.value) }),
     });
     const data = await res.json();
@@ -107,22 +140,43 @@ const creating = ref(false);
 
 function bulkAction(action: 'delete' | 'publish' | 'unpublish') {
     if (!selectedIds.value.size) return;
-    if (action === 'delete' && !confirm(`Delete ${selectedIds.value.size} page(s)? This cannot be undone.`)) return;
+    if (
+        action === 'delete' &&
+        !confirm(
+            `Delete ${selectedIds.value.size} page(s)? This cannot be undone.`,
+        )
+    )
+        return;
 
     bulkProcessing.value = true;
-    router.post('/admin/pages/bulk', { action, ids: [...selectedIds.value] }, {
-        onFinish: () => { bulkProcessing.value = false; selectedIds.value = new Set(); },
-    });
+    router.post(
+        '/admin/pages/bulk',
+        { action, ids: [...selectedIds.value] },
+        {
+            onFinish: () => {
+                bulkProcessing.value = false;
+                selectedIds.value = new Set();
+            },
+        },
+    );
 }
 
 function createPage() {
     if (creating.value) return;
 
-    router.post('/admin/pages/quick-create', {}, {
-        preserveScroll: true,
-        onStart: () => { creating.value = true; },
-        onFinish: () => { creating.value = false; },
-    });
+    router.post(
+        '/admin/pages/quick-create',
+        {},
+        {
+            preserveScroll: true,
+            onStart: () => {
+                creating.value = true;
+            },
+            onFinish: () => {
+                creating.value = false;
+            },
+        },
+    );
 }
 </script>
 
@@ -149,15 +203,25 @@ function createPage() {
                     leave-active-class="transition-all duration-200"
                     leave-to-class="opacity-0 scale-90"
                 >
-                    <span v-if="saving" class="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span
+                        v-if="saving"
+                        class="flex items-center gap-1 text-xs text-muted-foreground"
+                    >
                         <Loader2 class="h-3.5 w-3.5 animate-spin" /> Saving…
                     </span>
-                    <span v-else-if="savedFlash" class="flex items-center gap-1 text-xs text-muted-foreground">
-                        <CheckCircle2 class="h-3.5 w-3.5 text-green-500" /> Saved
+                    <span
+                        v-else-if="savedFlash"
+                        class="flex items-center gap-1 text-xs text-muted-foreground"
+                    >
+                        <CheckCircle2 class="h-3.5 w-3.5 text-green-500" />
+                        Saved
                     </span>
                 </Transition>
                 <Button :disabled="creating" @click="createPage">
-                    <Loader2 v-if="creating" class="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2
+                        v-if="creating"
+                        class="mr-2 h-4 w-4 animate-spin"
+                    />
                     <FilePlus v-else class="mr-2 h-4 w-4" />
                     New Page
                 </Button>
@@ -176,12 +240,34 @@ function createPage() {
                 class="flex items-center gap-3 rounded-lg border bg-accent px-4 py-2.5"
             >
                 <CheckSquare class="h-4 w-4 text-muted-foreground" />
-                <span class="text-sm font-medium">{{ selectedIds.size }} selected</span>
+                <span class="text-sm font-medium"
+                    >{{ selectedIds.size }} selected</span
+                >
                 <div class="ml-auto flex items-center gap-2">
-                    <Button size="sm" variant="outline" :disabled="bulkProcessing" @click="bulkAction('publish')">Publish</Button>
-                    <Button size="sm" variant="outline" :disabled="bulkProcessing" @click="bulkAction('unpublish')">Unpublish</Button>
-                    <Button size="sm" variant="destructive" :disabled="bulkProcessing" @click="bulkAction('delete')">
-                        <Loader2 v-if="bulkProcessing" class="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        :disabled="bulkProcessing"
+                        @click="bulkAction('publish')"
+                        >Publish</Button
+                    >
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        :disabled="bulkProcessing"
+                        @click="bulkAction('unpublish')"
+                        >Unpublish</Button
+                    >
+                    <Button
+                        size="sm"
+                        variant="destructive"
+                        :disabled="bulkProcessing"
+                        @click="bulkAction('delete')"
+                    >
+                        <Loader2
+                            v-if="bulkProcessing"
+                            class="mr-1.5 h-3.5 w-3.5 animate-spin"
+                        />
                         <Trash2 v-else class="mr-1.5 h-3.5 w-3.5" />
                         Delete
                     </Button>
@@ -190,12 +276,21 @@ function createPage() {
         </Transition>
 
         <!-- Tree -->
-        <div v-if="items.length === 0" class="flex min-h-48 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
+        <div
+            v-if="items.length === 0"
+            class="flex min-h-48 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground"
+        >
             No pages yet.
-            <button type="button" class="ml-1 underline" :disabled="creating" @click="createPage">Create one.</button>
+            <button
+                type="button"
+                class="ml-1 underline"
+                :disabled="creating"
+                @click="createPage"
+            >
+                Create one.
+            </button>
         </div>
 
         <PageTreeList v-else v-model="items" />
     </AppLayout>
 </template>
-

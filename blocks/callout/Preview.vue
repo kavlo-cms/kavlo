@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { AlertCircle, AlertTriangle, CheckCircle, Info } from 'lucide-vue-next';
+import { computed } from 'vue';
 import InlineEdit from '@/admin/Pages/partials/InlineEdit.vue';
 
 const props = defineProps<{ data: Record<string, unknown> }>();

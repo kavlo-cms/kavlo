@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { computed, inject, type Ref } from 'vue';
 import { VueDraggable } from 'vue-draggable-plus';
-import { ChevronDown, ChevronRight, Eye, GripVertical, Home, Pencil, Trash2 } from 'lucide-vue-next';
+import {
+    ChevronDown,
+    ChevronRight,
+    Eye,
+    GripVertical,
+    Home,
+    Pencil,
+    Trash2,
+} from 'lucide-vue-next';
 import { Link, router } from '@inertiajs/vue3';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -57,12 +65,18 @@ function deletePage(page: PageNode) {
         :animation="150"
         ghost-class="opacity-30"
         :class="[
-            depth > 0 ? 'ml-7 mt-1 space-y-1 border-l-2 border-border pl-3' : 'space-y-1.5',
+            depth > 0
+                ? 'mt-1 ml-7 space-y-1 border-l-2 border-border pl-3'
+                : 'space-y-1.5',
             depth > 0 && list.length === 0 ? 'min-h-7' : '',
         ]"
         @end="markDirty()"
     >
-        <div v-for="page in list" :key="page.id" class="rounded-lg border bg-card shadow-xs">
+        <div
+            v-for="page in list"
+            :key="page.id"
+            class="rounded-lg border bg-card shadow-xs"
+        >
             <!-- Row -->
             <div class="flex items-center gap-2 px-3 py-2">
                 <GripVertical
@@ -79,7 +93,7 @@ function deletePage(page: PageNode) {
                 <!-- Expand/collapse children toggle -->
                 <button
                     v-if="page.children.length > 0"
-                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
+                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground"
                     @click="page._expanded = !page._expanded"
                 >
                     <ChevronDown v-if="page._expanded" class="h-3.5 w-3.5" />
@@ -92,11 +106,17 @@ function deletePage(page: PageNode) {
                     :href="`/admin/pages/${page.id}/edit`"
                     class="min-w-0 flex-1 truncate rounded-sm text-sm font-medium transition-colors hover:text-primary hover:underline"
                 >
-                    <Home v-if="page.is_homepage" class="mr-1 inline h-3.5 w-3.5 text-muted-foreground" />
+                    <Home
+                        v-if="page.is_homepage"
+                        class="mr-1 inline h-3.5 w-3.5 text-muted-foreground"
+                    />
                     {{ page.title }}
                 </Link>
 
-                <span class="hidden font-mono text-xs text-muted-foreground sm:block">/{{ page.slug }}</span>
+                <span
+                    class="hidden font-mono text-xs text-muted-foreground sm:block"
+                    >/{{ page.slug }}</span
+                >
 
                 <Badge
                     v-if="page.type && page.type !== 'page'"
@@ -106,18 +126,37 @@ function deletePage(page: PageNode) {
                     {{ page.type }}
                 </Badge>
 
-                <Badge :variant="page.is_published ? 'default' : 'secondary'" class="shrink-0 text-xs">
+                <Badge
+                    :variant="page.is_published ? 'default' : 'secondary'"
+                    class="shrink-0 text-xs"
+                >
                     {{ page.is_published ? 'Published' : 'Draft' }}
                 </Badge>
 
                 <!-- Actions -->
                 <div class="flex shrink-0 items-center gap-0.5">
-                    <Button variant="ghost" size="icon" class="h-7 w-7" as-child title="Preview">
-                        <a :href="`/admin/pages/${page.id}/preview`" target="_blank" rel="noopener">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        class="h-7 w-7"
+                        as-child
+                        title="Preview"
+                    >
+                        <a
+                            :href="`/admin/pages/${page.id}/preview`"
+                            target="_blank"
+                            rel="noopener"
+                        >
                             <Eye class="h-3.5 w-3.5" />
                         </a>
                     </Button>
-                    <Button variant="ghost" size="icon" class="h-7 w-7" as-child title="Edit">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        class="h-7 w-7"
+                        as-child
+                        title="Edit"
+                    >
                         <Link :href="`/admin/pages/${page.id}/edit`">
                             <Pencil class="h-3.5 w-3.5" />
                         </Link>
@@ -144,7 +183,9 @@ function deletePage(page: PageNode) {
             <div
                 v-if="depth < MAX_DEPTH"
                 class="px-3 pb-2"
-                :class="page.children.length > 0 && !page._expanded ? 'hidden' : ''"
+                :class="
+                    page.children.length > 0 && !page._expanded ? 'hidden' : ''
+                "
             >
                 <!-- Empty drop-zone hint (pointer-events-none so it doesn't block drops) -->
                 <div

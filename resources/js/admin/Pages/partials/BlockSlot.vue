@@ -65,19 +65,27 @@ function onAdd(evt: { data: Block }) {
 
             <!-- Selection ring -->
             <div
-                class="absolute inset-0 pointer-events-none z-10 transition-[box-shadow]"
-                :class="selectedBlockId === block.id
-                    ? 'ring-2 ring-inset ring-primary'
-                    : 'ring-1 ring-inset ring-transparent group-hover:ring-primary/30'"
+                class="pointer-events-none absolute inset-0 z-10 transition-[box-shadow]"
+                :class="
+                    selectedBlockId === block.id
+                        ? 'ring-2 ring-primary ring-inset'
+                        : 'ring-1 ring-transparent ring-inset group-hover:ring-primary/30'
+                "
             />
 
             <!-- Floating controls -->
-            <div class="absolute left-1/2 top-1 z-20 -translate-x-1/2 flex items-center gap-1 rounded border bg-background/95 px-2 py-0.5 shadow-sm text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                <GripVertical class="drag-handle-slot h-3.5 w-3.5 cursor-grab text-muted-foreground" />
-                <span class="font-medium text-muted-foreground">{{ blockLabel(block) }}</span>
+            <div
+                class="absolute top-1 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded border bg-background/95 px-2 py-0.5 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
+            >
+                <GripVertical
+                    class="drag-handle-slot h-3.5 w-3.5 cursor-grab text-muted-foreground"
+                />
+                <span class="font-medium text-muted-foreground">{{
+                    blockLabel(block)
+                }}</span>
                 <div class="mx-1 h-3 w-px bg-border" />
                 <button
-                    class="rounded p-0.5 text-muted-foreground hover:text-destructive transition-colors"
+                    class="rounded p-0.5 text-muted-foreground transition-colors hover:text-destructive"
                     title="Remove"
                     @click.stop="removeBlock(block.id)"
                 >
@@ -89,7 +97,7 @@ function onAdd(evt: { data: Block }) {
         <!-- Empty drop target hint -->
         <div
             v-if="blocks.length === 0"
-            class="flex items-center justify-center h-16 rounded border border-dashed border-muted-foreground/30 text-xs text-muted-foreground"
+            class="flex h-16 items-center justify-center rounded border border-dashed border-muted-foreground/30 text-xs text-muted-foreground"
         >
             Drop {{ allowedTypes ? allowedTypes.join(' or ') : 'blocks' }} here
         </div>

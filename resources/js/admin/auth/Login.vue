@@ -27,15 +27,27 @@ function submit() {
 <template>
     <Head title="Sign in" />
 
-    <AuthLayout title="Sign in to admin" description="Use your account to access the CMS.">
-        <div v-if="props.status" class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+    <AuthLayout
+        title="Sign in to admin"
+        description="Use your account to access the CMS."
+    >
+        <div
+            v-if="props.status"
+            class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
+        >
             {{ props.status }}
         </div>
 
         <form class="space-y-4" @submit.prevent="submit">
             <div class="space-y-2">
                 <Label for="email">Email</Label>
-                <Input id="email" v-model="form.email" type="email" autocomplete="email" autofocus />
+                <Input
+                    id="email"
+                    v-model="form.email"
+                    type="email"
+                    autocomplete="email"
+                    autofocus
+                />
                 <InputError :message="form.errors.email" />
             </div>
 
@@ -50,12 +62,23 @@ function submit() {
                         Forgot password?
                     </Link>
                 </div>
-                <Input id="password" v-model="form.password" type="password" autocomplete="current-password" />
+                <Input
+                    id="password"
+                    v-model="form.password"
+                    type="password"
+                    autocomplete="current-password"
+                />
                 <InputError :message="form.errors.password" />
             </div>
 
-            <label class="flex items-center gap-2 text-sm text-muted-foreground">
-                <input v-model="form.remember" type="checkbox" class="h-4 w-4 rounded border-input text-primary" />
+            <label
+                class="flex items-center gap-2 text-sm text-muted-foreground"
+            >
+                <input
+                    v-model="form.remember"
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-input text-primary"
+                />
                 Remember me
             </label>
 

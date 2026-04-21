@@ -2,17 +2,14 @@
 import { Eye, Image as ImageIcon, Plus, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import MediaPicker from '@/components/MediaPicker.vue';
-import type {MediaItem} from '@/components/MediaPicker.vue';
+import type { MediaItem } from '@/components/MediaPicker.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import {
-    useBlockSchemas
-    
-} from '@/composables/useBlockSchemas';
-import type {AvailableBlock} from '@/composables/useBlockSchemas';
+import { useBlockSchemas } from '@/composables/useBlockSchemas';
+import type { AvailableBlock } from '@/composables/useBlockSchemas';
 import type { Block } from '@/types/blocks';
 
 type Tab = 'page' | 'block' | 'revisions';
@@ -111,14 +108,17 @@ const { getSchema } = useBlockSchemas(() => props.availableBlocks);
 const schema = computed(() =>
     props.selectedBlock ? getSchema(props.selectedBlock.type) : null,
 );
-const selectedPageType = computed(() =>
-    props.pageTypes.find((pageType) => pageType.type === (props.form.type ?? 'page')) ?? null,
+const selectedPageType = computed(
+    () =>
+        props.pageTypes.find(
+            (pageType) => pageType.type === (props.form.type ?? 'page'),
+        ) ?? null,
 );
 
 function updateBlockField(key: string, value: string) {
     if (!props.selectedBlock) {
-return;
-}
+        return;
+    }
 
     emit('update:blockData', props.selectedBlock.id, {
         ...(props.selectedBlock.data ?? {}),
@@ -137,8 +137,8 @@ function openMediaPicker(fieldKey: string) {
 
 function onMediaSelect(item: MediaItem) {
     if (!props.selectedBlock) {
-return;
-}
+        return;
+    }
 
     const updates: Record<string, unknown> = {
         ...(props.selectedBlock.data ?? {}),
@@ -158,8 +158,8 @@ const pageLinkModes = ref<Record<string, 'page' | 'custom'>>({});
 
 function pageLinkMode(fieldKey: string): 'page' | 'custom' {
     if (pageLinkModes.value[fieldKey]) {
-return pageLinkModes.value[fieldKey];
-}
+        return pageLinkModes.value[fieldKey];
+    }
 
     // Auto-detect: if value looks like a page slug (starts with /) or matches a page slug → page mode
     const val = (props.selectedBlock?.data?.[fieldKey] as string) ?? '';
@@ -210,16 +210,16 @@ function syncMeta() {
     const obj: Record<string, string> = {};
     metaPairs.value.forEach((p) => {
         if (p.key.trim()) {
-obj[p.key.trim()] = p.value;
-}
+            obj[p.key.trim()] = p.value;
+        }
     });
     emit('update:form', 'metadata', obj);
 }
 
 function addMeta(key = '') {
     if (key && metaPairs.value.some((p) => p.key === key)) {
-return;
-}
+        return;
+    }
 
     metaPairs.value.push({ key, value: '' });
     syncMeta();
@@ -325,12 +325,15 @@ function removeMeta(index: number) {
                             }})
                         </option>
                     </select>
-                    <p v-if="selectedPageType" class="text-xs text-muted-foreground">
+                    <p
+                        v-if="selectedPageType"
+                        class="text-xs text-muted-foreground"
+                    >
                         Provided by
                         {{
-                            selectedPageType.source_label
-                            ?? selectedPageType.source
-                            ?? 'Core'
+                            selectedPageType.source_label ??
+                            selectedPageType.source ??
+                            'Core'
                         }}.
                     </p>
                     <p

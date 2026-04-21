@@ -1,8 +1,22 @@
 <script setup lang="ts">
 import {
-    AlertCircle, AlignLeft, ArrowUpDown, ChevronDown, GripVertical,
-    Heading1, Image, LayoutGrid, List, Minus, MousePointer2,
-    Quote, Search, Sparkles, Square, Video, X,
+    AlertCircle,
+    AlignLeft,
+    ArrowUpDown,
+    ChevronDown,
+    GripVertical,
+    Heading1,
+    Image,
+    LayoutGrid,
+    List,
+    Minus,
+    MousePointer2,
+    Quote,
+    Search,
+    Sparkles,
+    Square,
+    Video,
+    X,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { VueDraggable } from 'vue-draggable-plus';
@@ -18,10 +32,19 @@ const props = defineProps<{
 const { getSchema } = useBlockSchemas(() => props.availableBlocks);
 
 const iconMap: Record<string, unknown> = {
-    Heading1, AlignLeft, Quote, List,
-    Square, LayoutGrid, Minus, ArrowUpDown,
-    Image, Video,
-    Sparkles, MousePointer2, AlertCircle,
+    Heading1,
+    AlignLeft,
+    Quote,
+    List,
+    Square,
+    LayoutGrid,
+    Minus,
+    ArrowUpDown,
+    Image,
+    Video,
+    Sparkles,
+    MousePointer2,
+    AlertCircle,
 };
 
 function blockIcon(type: string) {
@@ -96,21 +119,28 @@ const visibleGroups = computed(() => {
 </script>
 
 <template>
-    <aside class="flex w-full shrink-0 flex-col border-r bg-muted/30 overflow-hidden h-full">
+    <aside
+        class="flex h-full w-full shrink-0 flex-col overflow-hidden border-r bg-muted/30"
+    >
         <!-- Header + search -->
-        <div class="shrink-0 border-b px-3 pb-2 pt-3">
-            <span class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Blocks</span>
+        <div class="shrink-0 border-b px-3 pt-3 pb-2">
+            <span
+                class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                >Blocks</span
+            >
             <div class="relative mt-2">
-                <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Search
+                    class="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+                />
                 <input
                     v-model="search"
                     type="search"
                     placeholder="Search blocks…"
-                    class="h-8 w-full rounded-md border bg-background pl-8 pr-7 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                    class="h-8 w-full rounded-md border bg-background pr-7 pl-8 text-xs focus:ring-1 focus:ring-ring focus:outline-none"
                 />
                 <button
                     v-if="search"
-                    class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    class="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     @click="search = ''"
                 >
                     <X class="h-3.5 w-3.5" />
@@ -129,7 +159,7 @@ const visibleGroups = computed(() => {
             <div v-for="group in visibleGroups" :key="group">
                 <!-- Group header -->
                 <button
-                    class="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
+                    class="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase transition-colors hover:text-foreground"
                     @click="toggleGroup(group)"
                 >
                     <span>{{ blockGroups[group] ?? group }}</span>
@@ -151,15 +181,19 @@ const visibleGroups = computed(() => {
                     <div
                         v-for="block in groupedBlocks[group]"
                         :key="block.type"
-                        class="flex items-center gap-2.5 rounded-md border bg-background px-2.5 py-2 cursor-grab active:cursor-grabbing hover:border-primary/50 hover:bg-accent transition-colors select-none"
+                        class="flex cursor-grab items-center gap-2.5 rounded-md border bg-background px-2.5 py-2 transition-colors select-none hover:border-primary/50 hover:bg-accent active:cursor-grabbing"
                     >
                         <component
                             :is="blockIcon(block.type)"
                             class="h-4 w-4 shrink-0 text-muted-foreground"
                         />
                         <div class="min-w-0 flex-1">
-                            <p class="truncate text-sm font-medium leading-none">
-                                {{ getSchema(block.type)?.label ?? block.label }}
+                            <p
+                                class="truncate text-sm leading-none font-medium"
+                            >
+                                {{
+                                    getSchema(block.type)?.label ?? block.label
+                                }}
                             </p>
                             <p
                                 v-if="getSchema(block.type)?.description"
@@ -168,7 +202,9 @@ const visibleGroups = computed(() => {
                                 {{ getSchema(block.type)?.description }}
                             </p>
                         </div>
-                        <GripVertical class="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+                        <GripVertical
+                            class="h-3.5 w-3.5 shrink-0 text-muted-foreground/50"
+                        />
                     </div>
                 </VueDraggable>
             </div>

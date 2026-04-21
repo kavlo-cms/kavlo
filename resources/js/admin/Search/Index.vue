@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { Search as SearchIcon } from 'lucide-vue-next';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
@@ -22,18 +28,32 @@ interface SearchResults {
     redirects: SearchItem[];
 }
 
-const props = defineProps<{
+defineProps<{
     query: string;
     results: SearchResults;
 }>();
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Search', href: '/admin/search' }];
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Search', href: '/admin/search' },
+];
 
-const groups: { key: keyof SearchResults; title: string; description: string }[] = [
+const groups: {
+    key: keyof SearchResults;
+    title: string;
+    description: string;
+}[] = [
     { key: 'pages', title: 'Pages', description: 'Published and draft pages' },
-    { key: 'forms', title: 'Forms', description: 'Forms and submission endpoints' },
+    {
+        key: 'forms',
+        title: 'Forms',
+        description: 'Forms and submission endpoints',
+    },
     { key: 'menus', title: 'Menus', description: 'Navigation structures' },
-    { key: 'emailTemplates', title: 'Email Templates', description: 'Transactional email content' },
+    {
+        key: 'emailTemplates',
+        title: 'Email Templates',
+        description: 'Transactional email content',
+    },
     { key: 'redirects', title: 'Redirects', description: 'URL rewrite rules' },
 ];
 </script>
@@ -43,7 +63,10 @@ const groups: { key: keyof SearchResults; title: string; description: string }[]
         <div class="flex items-center justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight">Search</h1>
-                <p class="text-sm text-muted-foreground">Find pages, forms, menus, email templates, and redirects across the CMS.</p>
+                <p class="text-sm text-muted-foreground">
+                    Find pages, forms, menus, email templates, and redirects
+                    across the CMS.
+                </p>
             </div>
         </div>
 
@@ -53,16 +76,26 @@ const groups: { key: keyof SearchResults; title: string; description: string }[]
                     <SearchIcon class="h-4 w-4" />
                     Global content search
                 </CardTitle>
-                <CardDescription>Search by title, slug, URL, metadata, or content text.</CardDescription>
+                <CardDescription
+                    >Search by title, slug, URL, metadata, or content
+                    text.</CardDescription
+                >
             </CardHeader>
             <CardContent>
                 <form action="/admin/search" method="get">
-                    <Input name="q" :model-value="query" placeholder="Search pages, forms, menus, redirects..." />
+                    <Input
+                        name="q"
+                        :model-value="query"
+                        placeholder="Search pages, forms, menus, redirects..."
+                    />
                 </form>
             </CardContent>
         </Card>
 
-        <div v-if="query.length < 2" class="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+        <div
+            v-if="query.length < 2"
+            class="rounded-lg border border-dashed p-6 text-sm text-muted-foreground"
+        >
             Enter at least two characters to search.
         </div>
 
@@ -73,8 +106,13 @@ const groups: { key: keyof SearchResults; title: string; description: string }[]
                     <CardDescription>{{ group.description }}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div v-if="results[group.key].length === 0" class="text-sm text-muted-foreground">
-                        No {{ group.title.toLowerCase() }} matched “{{ query }}”.
+                    <div
+                        v-if="results[group.key].length === 0"
+                        class="text-sm text-muted-foreground"
+                    >
+                        No {{ group.title.toLowerCase() }} matched “{{
+                            query
+                        }}”.
                     </div>
 
                     <div v-else class="space-y-3">
@@ -86,8 +124,14 @@ const groups: { key: keyof SearchResults; title: string; description: string }[]
                         >
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0">
-                                    <p class="truncate font-medium">{{ item.title }}</p>
-                                    <p class="truncate font-mono text-xs text-muted-foreground">{{ item.meta }}</p>
+                                    <p class="truncate font-medium">
+                                        {{ item.title }}
+                                    </p>
+                                    <p
+                                        class="truncate font-mono text-xs text-muted-foreground"
+                                    >
+                                        {{ item.meta }}
+                                    </p>
                                 </div>
                                 <span
                                     v-if="item.status"
@@ -96,7 +140,9 @@ const groups: { key: keyof SearchResults; title: string; description: string }[]
                                     {{ item.status }}
                                 </span>
                             </div>
-                            <p class="mt-2 text-sm text-muted-foreground">{{ item.excerpt }}</p>
+                            <p class="mt-2 text-sm text-muted-foreground">
+                                {{ item.excerpt }}
+                            </p>
                         </a>
                     </div>
                 </CardContent>

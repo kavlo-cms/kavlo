@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/vue-starter-kit",
+    "name": "kavlo/cms",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "A Laravel CMS with an Inertia/Vue admin, page builder, themes, and plugins.",
     "keywords": [
         "laravel",
         "framework"

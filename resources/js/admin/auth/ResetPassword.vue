@@ -28,17 +28,31 @@ function submit() {
 <template>
     <Head title="Reset password" />
 
-    <AuthLayout title="Choose a new password" description="Set a strong password for your account.">
+    <AuthLayout
+        title="Choose a new password"
+        description="Set a strong password for your account."
+    >
         <form class="space-y-4" @submit.prevent="submit">
             <div class="space-y-2">
                 <Label for="email">Email</Label>
-                <Input id="email" v-model="form.email" type="email" autocomplete="email" autofocus />
+                <Input
+                    id="email"
+                    v-model="form.email"
+                    type="email"
+                    autocomplete="email"
+                    autofocus
+                />
                 <InputError :message="form.errors.email" />
             </div>
 
             <div class="space-y-2">
                 <Label for="password">Password</Label>
-                <Input id="password" v-model="form.password" type="password" autocomplete="new-password" />
+                <Input
+                    id="password"
+                    v-model="form.password"
+                    type="password"
+                    autocomplete="new-password"
+                />
                 <InputError :message="form.errors.password" />
             </div>
 

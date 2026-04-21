@@ -17,7 +17,10 @@ const form = useForm({ name: '', slug: '' });
 
 function autoSlug() {
     if (!form.slug) {
-        form.slug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        form.slug = form.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
     }
 }
 
@@ -38,18 +41,35 @@ function submit() {
         <form class="max-w-md space-y-4" @submit.prevent="submit">
             <div class="space-y-1.5">
                 <Label for="name">Name</Label>
-                <Input id="name" v-model="form.name" placeholder="Main Navigation" @blur="autoSlug" />
-                <p v-if="form.errors.name" class="text-sm text-destructive">{{ form.errors.name }}</p>
+                <Input
+                    id="name"
+                    v-model="form.name"
+                    placeholder="Main Navigation"
+                    @blur="autoSlug"
+                />
+                <p v-if="form.errors.name" class="text-sm text-destructive">
+                    {{ form.errors.name }}
+                </p>
             </div>
 
             <div class="space-y-1.5">
                 <Label for="slug">Slug</Label>
-                <Input id="slug" v-model="form.slug" placeholder="main-navigation" class="font-mono" />
-                <p v-if="form.errors.slug" class="text-sm text-destructive">{{ form.errors.slug }}</p>
+                <Input
+                    id="slug"
+                    v-model="form.slug"
+                    placeholder="main-navigation"
+                    class="font-mono"
+                />
+                <p v-if="form.errors.slug" class="text-sm text-destructive">
+                    {{ form.errors.slug }}
+                </p>
             </div>
 
             <Button type="submit" :disabled="form.processing">
-                <Loader2 v-if="form.processing" class="mr-2 h-4 w-4 animate-spin" />
+                <Loader2
+                    v-if="form.processing"
+                    class="mr-2 h-4 w-4 animate-spin"
+                />
                 Create &amp; Edit
             </Button>
         </form>

@@ -16,8 +16,8 @@ class FormBuilderTest extends TestCase
     {
         parent::setUp();
 
-        $container = new Container();
-        $container->instance(HookManager::class, new HookManager());
+        $container = new Container;
+        $container->instance(HookManager::class, new HookManager);
 
         Facade::setFacadeApplication($container);
     }
@@ -34,16 +34,16 @@ class FormBuilderTest extends TestCase
     {
         $blocks = FormBuilder::legacyFieldsToBlocks([
             new FormField([
-                'type'        => 'email',
-                'label'       => 'Email Address',
-                'key'         => 'email_address',
+                'type' => 'email',
+                'label' => 'Email Address',
+                'key' => 'email_address',
                 'placeholder' => 'you@example.com',
-                'required'    => true,
+                'required' => true,
             ]),
             new FormField([
-                'type'    => 'select',
-                'label'   => 'Reason',
-                'key'     => 'reason',
+                'type' => 'select',
+                'label' => 'Reason',
+                'key' => 'reason',
                 'options' => [
                     ['label' => 'Support', 'value' => 'support'],
                 ],
@@ -63,21 +63,21 @@ class FormBuilderTest extends TestCase
         $form = new Form([
             'blocks' => [
                 [
-                    'id'    => 'field-1',
-                    'type'  => 'input',
-                    'data'  => [
-                        'input_type'  => 'email',
-                        'label'       => 'Email',
-                        'key'         => 'email',
+                    'id' => 'field-1',
+                    'type' => 'input',
+                    'data' => [
+                        'input_type' => 'email',
+                        'label' => 'Email',
+                        'key' => 'email',
                         'placeholder' => 'you@example.com',
-                        'required'    => true,
+                        'required' => true,
                     ],
                     'order' => 0,
                 ],
                 [
-                    'id'    => 'button-1',
-                    'type'  => 'button',
-                    'data'  => ['label' => 'Send'],
+                    'id' => 'button-1',
+                    'type' => 'button',
+                    'data' => ['label' => 'Send'],
                     'order' => 1,
                 ],
             ],
@@ -148,8 +148,8 @@ class FormBuilderTest extends TestCase
     {
         $form = new Form([
             'success_message' => 'All set!',
-            'redirect_url'    => '/thanks',
-            'notify_email'    => 'team@example.com',
+            'redirect_url' => '/thanks',
+            'notify_email' => 'team@example.com',
         ]);
 
         $config = FormBuilder::resolvedActionConfig($form);
@@ -163,12 +163,12 @@ class FormBuilderTest extends TestCase
     {
         $fieldOnlyErrors = FormBuilder::validateBlocks([
             [
-                'id'    => 'field-1',
-                'type'  => 'input',
-                'data'  => [
+                'id' => 'field-1',
+                'type' => 'input',
+                'data' => [
                     'input_type' => 'text',
-                    'label'      => 'Name',
-                    'key'        => 'name',
+                    'label' => 'Name',
+                    'key' => 'name',
                 ],
                 'order' => 0,
             ],
@@ -176,9 +176,9 @@ class FormBuilderTest extends TestCase
 
         $buttonOnlyErrors = FormBuilder::validateBlocks([
             [
-                'id'    => 'button-1',
-                'type'  => 'button',
-                'data'  => ['label' => 'Send'],
+                'id' => 'button-1',
+                'type' => 'button',
+                'data' => ['label' => 'Send'],
                 'order' => 0,
             ],
         ]);

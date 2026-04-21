@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\Cache;
 
 class ProcessScheduledPages extends Command
 {
-    protected $signature   = 'pages:process-scheduled';
+    protected $signature = 'pages:process-scheduled';
+
     protected $description = 'Publish or unpublish pages based on their scheduled times';
 
     public function handle(): void
@@ -26,7 +27,7 @@ class ProcessScheduledPages extends Command
             $page->update([
                 'is_published' => true,
                 'published_at' => $page->publish_at,
-                'publish_at'   => null,
+                'publish_at' => null,
             ]);
             $this->line("Published: {$page->title}");
         }

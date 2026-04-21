@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import FormPreviewBlocks from './FormPreviewBlocks.vue';
 
 interface Attributes {
@@ -11,7 +11,12 @@ interface FormPreview {
     value: string;
     label: string;
     source?: string;
-    blocks?: Array<Record<string, unknown>>;
+    blocks?: Array<{
+        id?: string;
+        type: string;
+        data?: Record<string, unknown>;
+        order?: number;
+    }>;
     preview_html?: string | null;
 }
 

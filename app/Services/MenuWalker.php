@@ -9,12 +9,12 @@ use Illuminate\Support\Collection;
 class MenuWalker
 {
     protected array $format = [
-        'container_tag'   => 'nav', // Better for SEO than <ul>
+        'container_tag' => 'nav', // Better for SEO than <ul>
         'container_class' => 'main-navigation',
-        'list_tag'        => 'ul',
-        'item_tag'        => 'li',
-        'item_class'      => 'menu-item',
-        'link_class'      => 'menu-link',
+        'list_tag' => 'ul',
+        'item_tag' => 'li',
+        'item_class' => 'menu-item',
+        'link_class' => 'menu-link',
     ];
 
     public function render(Menu $menu, array $options = []): string
@@ -44,6 +44,7 @@ class MenuWalker
         }
 
         $html .= "</{$tag}>";
+
         return $html;
     }
 
@@ -61,7 +62,7 @@ class MenuWalker
         $html = "<{$itemTag} class=\"{$this->format['item_class']}{$active}{$hasChildren}\" itemprop=\"name\">";
 
         // A: Explicitly tell Google this is the URL for the navigation element
-        $html .= "<a href=\"{$url}\" class=\"{$this->format['link_class']}\" itemprop=\"url\">" . e($item->label) . "</a>";
+        $html .= "<a href=\"{$url}\" class=\"{$this->format['link_class']}\" itemprop=\"url\">".e($item->label).'</a>';
 
         if ($item->children->isNotEmpty()) {
             $html .= $this->walk($item->children, $depth + 1);

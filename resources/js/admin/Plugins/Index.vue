@@ -5,7 +5,13 @@ import { Loader2, Plug, Upload } from 'lucide-vue-next';
 import AlertError from '@/components/AlertError.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/AppLayout.vue';
 import admin from '@/routes/admin';
@@ -45,7 +51,10 @@ const pluginErrors = computed(() => {
     const error = page.props.errors?.plugin;
 
     if (Array.isArray(error)) {
-        return error.filter((value): value is string => typeof value === 'string' && value.length > 0);
+        return error.filter(
+            (value): value is string =>
+                typeof value === 'string' && value.length > 0,
+        );
     }
 
     return typeof error === 'string' && error.length > 0 ? [error] : [];
@@ -91,7 +100,9 @@ function uploadArchive() {
         forceFormData: true,
         onSuccess: () => {
             uploadForm.reset();
-            const input = document.getElementById('plugin-archive') as HTMLInputElement | null;
+            const input = document.getElementById(
+                'plugin-archive',
+            ) as HTMLInputElement | null;
             if (input) {
                 input.value = '';
             }
@@ -103,17 +114,34 @@ function uploadArchive() {
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-3">
-            <AlertError v-if="pluginErrors.length > 0" :errors="pluginErrors" title="Plugin activation failed." />
-            <AlertError v-if="flashError.length > 0" :errors="flashError" title="Plugin error." />
+            <AlertError
+                v-if="pluginErrors.length > 0"
+                :errors="pluginErrors"
+                title="Plugin activation failed."
+            />
+            <AlertError
+                v-if="flashError.length > 0"
+                :errors="flashError"
+                title="Plugin error."
+            />
         </div>
 
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div
+            class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between"
+        >
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight">Plugins</h1>
-                <p class="text-sm text-muted-foreground">{{ props.plugins.length }} plugin{{ props.plugins.length === 1 ? '' : 's' }} found</p>
+                <p class="text-sm text-muted-foreground">
+                    {{ props.plugins.length }} plugin{{
+                        props.plugins.length === 1 ? '' : 's'
+                    }}
+                    found
+                </p>
             </div>
 
-            <div class="flex w-full flex-col gap-2 rounded-lg border bg-card p-3 lg:w-auto lg:min-w-[28rem]">
+            <div
+                class="flex w-full flex-col gap-2 rounded-lg border bg-card p-3 lg:w-auto lg:min-w-[28rem]"
+            >
                 <div class="flex items-center gap-2">
                     <Upload class="h-4 w-4 text-muted-foreground" />
                     <p class="text-sm font-medium">Upload plugin archive</p>
@@ -125,23 +153,42 @@ function uploadArchive() {
                         accept=".zip,.tar,.tgz,.tar.gz,application/zip,application/x-tar,application/gzip"
                         @change="onArchiveChange"
                     />
-                    <Button :disabled="!uploadForm.archive || uploadForm.processing" @click="uploadArchive">
-                        <Loader2 v-if="uploadForm.processing" class="mr-2 h-4 w-4 animate-spin" />
+                    <Button
+                        :disabled="!uploadForm.archive || uploadForm.processing"
+                        @click="uploadArchive"
+                    >
+                        <Loader2
+                            v-if="uploadForm.processing"
+                            class="mr-2 h-4 w-4 animate-spin"
+                        />
                         <Upload v-else class="mr-2 h-4 w-4" />
                         Upload
                     </Button>
                 </div>
-                <p class="text-xs text-muted-foreground">Supports .zip, .tar, .tar.gz, and .tgz archives. Activation still runs the installer and migrations.</p>
-                <p v-if="uploadForm.errors.archive" class="text-xs text-destructive">{{ uploadForm.errors.archive }}</p>
+                <p class="text-xs text-muted-foreground">
+                    Supports .zip, .tar, .tar.gz, and .tgz archives. Activation
+                    still runs the installer and migrations.
+                </p>
+                <p
+                    v-if="uploadForm.errors.archive"
+                    class="text-xs text-destructive"
+                >
+                    {{ uploadForm.errors.archive }}
+                </p>
             </div>
         </div>
 
         <!-- Empty state -->
-        <div v-if="props.plugins.length === 0" class="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
+        <div
+            v-if="props.plugins.length === 0"
+            class="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center"
+        >
             <Plug class="mb-3 h-10 w-10 text-muted-foreground/40" />
             <p class="text-sm text-muted-foreground">No plugins found.</p>
             <p class="mt-1 text-xs text-muted-foreground">
-                Add a plugin folder with a <code class="rounded bg-muted px-1">plugin.json</code> under <code class="rounded bg-muted px-1">plugins/</code>.
+                Add a plugin folder with a
+                <code class="rounded bg-muted px-1">plugin.json</code> under
+                <code class="rounded bg-muted px-1">plugins/</code>.
             </p>
         </div>
 
@@ -152,20 +199,43 @@ function uploadArchive() {
                     <div class="flex items-start justify-between gap-4">
                         <div class="min-w-0 flex-1">
                             <div class="flex flex-wrap items-center gap-2">
-                                <CardTitle class="text-base">{{ plugin.name }}</CardTitle>
-                                <Badge v-if="plugin.version" variant="outline" class="text-xs font-normal">
+                                <CardTitle class="text-base">{{
+                                    plugin.name
+                                }}</CardTitle>
+                                <Badge
+                                    v-if="plugin.version"
+                                    variant="outline"
+                                    class="text-xs font-normal"
+                                >
                                     v{{ plugin.version }}
                                 </Badge>
-                                <Badge :variant="plugin.is_enabled ? 'default' : 'secondary'" class="text-xs">
-                                    {{ plugin.is_enabled ? 'Active' : 'Inactive' }}
+                                <Badge
+                                    :variant="
+                                        plugin.is_enabled
+                                            ? 'default'
+                                            : 'secondary'
+                                    "
+                                    class="text-xs"
+                                >
+                                    {{
+                                        plugin.is_enabled
+                                            ? 'Active'
+                                            : 'Inactive'
+                                    }}
                                 </Badge>
                             </div>
-                            <CardDescription v-if="plugin.description" class="mt-1">
+                            <CardDescription
+                                v-if="plugin.description"
+                                class="mt-1"
+                            >
                                 {{ plugin.description }}
                             </CardDescription>
                         </div>
                         <div class="flex items-center gap-2">
-                            <Loader2 v-if="togglingPluginId === plugin.id" class="h-4 w-4 animate-spin text-muted-foreground" />
+                            <Loader2
+                                v-if="togglingPluginId === plugin.id"
+                                class="h-4 w-4 animate-spin text-muted-foreground"
+                            />
                             <Button
                                 type="button"
                                 size="sm"
@@ -178,13 +248,17 @@ function uploadArchive() {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent v-if="plugin.author" class="pb-3 text-xs text-muted-foreground">
-                    By {{ plugin.author }} &middot; <code class="rounded bg-muted px-1">{{ plugin.slug }}</code>
+                <CardContent
+                    v-if="plugin.author"
+                    class="pb-3 text-xs text-muted-foreground"
+                >
+                    By {{ plugin.author }} &middot;
+                    <code class="rounded bg-muted px-1">{{ plugin.slug }}</code>
                 </CardContent>
                 <CardContent class="pt-0">
                     <div class="flex flex-wrap gap-1">
                         <Badge
-                            v-for="scope in (plugin.scopes ?? [])"
+                            v-for="scope in plugin.scopes ?? []"
                             :key="scope"
                             variant="outline"
                             class="text-[11px] font-normal"
@@ -203,7 +277,8 @@ function uploadArchive() {
         </div>
 
         <p class="text-xs text-muted-foreground">
-            Enabled plugins load on every request. Changes take effect immediately on the next page load.
+            Enabled plugins load on every request. Changes take effect
+            immediately on the next page load.
         </p>
     </AppLayout>
 </template>

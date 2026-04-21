@@ -22,15 +22,27 @@ function submit() {
 <template>
     <Head title="Forgot password" />
 
-    <AuthLayout title="Reset your password" description="Enter your email and we'll send you a reset link.">
-        <div v-if="status" class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+    <AuthLayout
+        title="Reset your password"
+        description="Enter your email and we'll send you a reset link."
+    >
+        <div
+            v-if="status"
+            class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
+        >
             {{ status }}
         </div>
 
         <form class="space-y-4" @submit.prevent="submit">
             <div class="space-y-2">
                 <Label for="email">Email</Label>
-                <Input id="email" v-model="form.email" type="email" autocomplete="email" autofocus />
+                <Input
+                    id="email"
+                    v-model="form.email"
+                    type="email"
+                    autocomplete="email"
+                    autofocus
+                />
                 <InputError :message="form.errors.email" />
             </div>
 
@@ -40,7 +52,10 @@ function submit() {
         </form>
 
         <p class="mt-6 text-center text-sm text-muted-foreground">
-            <Link href="/login" class="font-medium text-foreground hover:underline">
+            <Link
+                href="/login"
+                class="font-medium text-foreground hover:underline"
+            >
                 Back to sign in
             </Link>
         </p>

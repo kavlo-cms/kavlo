@@ -22,36 +22,36 @@ class UsersController extends Controller
         $users = User::with('roles', 'permissions')
             ->orderBy('name')
             ->get()
-            ->map(fn(User $user) => [
-                'id'                 => $user->id,
-                'name'               => $user->name,
-                'email'              => $user->email,
-                'roles'              => $user->roles->pluck('name'),
+            ->map(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'roles' => $user->roles->pluck('name'),
                 'direct_permissions' => $user->getDirectPermissions()->pluck('name')->sort()->values(),
-                'created_at'         => $user->created_at,
+                'created_at' => $user->created_at,
             ]);
 
         $allRoles = Role::with('permissions')
             ->orderBy('name')
             ->get()
-            ->map(fn(Role $role) => [
-                'id'          => $role->id,
-                'name'        => $role->name,
+            ->map(fn (Role $role) => [
+                'id' => $role->id,
+                'name' => $role->name,
                 'permissions' => $role->permissions->pluck('name')->sort()->values(),
                 'users_count' => $role->users()->count(),
             ]);
 
-        $permissions = Permission::orderBy('name')->get()->map(fn(Permission $p) => [
-            'id'   => $p->id,
+        $permissions = Permission::orderBy('name')->get()->map(fn (Permission $p) => [
+            'id' => $p->id,
             'name' => $p->name,
         ]);
 
         $roleNames = $allRoles->pluck('name');
 
         return Inertia::render('Users/Index', [
-            'users'       => $users,
-            'roles'       => $roleNames,
-            'allRoles'    => $allRoles,
+            'users' => $users,
+            'roles' => $roleNames,
+            'allRoles' => $allRoles,
             'permissions' => $permissions,
         ]);
     }
@@ -61,20 +61,20 @@ class UsersController extends Controller
         $this->authorize('manage users');
 
         $validated = $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'email', 'max:255', 'unique:users,email'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'roles'    => ['array'],
-            'roles.*'  => ['string', 'exists:roles,name'],
+            'roles' => ['array'],
+            'roles.*' => ['string', 'exists:roles,name'],
         ]);
 
         $user = User::create([
-            'name'     => $validated['name'],
-            'email'    => $validated['email'],
+            'name' => $validated['name'],
+            'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
         ]);
 
-        if (!empty($validated['roles'])) {
+        if (! empty($validated['roles'])) {
             $user->assignRole($validated['roles']);
         }
 
@@ -88,7 +88,7 @@ class UsersController extends Controller
         $this->authorize('manage users');
 
         $validated = $request->validate([
-            'roles'   => ['array'],
+            'roles' => ['array'],
             'roles.*' => ['string', 'exists:roles,name'],
         ]);
 
@@ -102,7 +102,7 @@ class UsersController extends Controller
         $this->authorize('manage users');
 
         $validated = $request->validate([
-            'permissions'   => ['array'],
+            'permissions' => ['array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 

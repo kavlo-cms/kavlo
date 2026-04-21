@@ -179,25 +179,22 @@
 @layer components {
     /* Top-level list */
     nav .nav-list {
-        @apply flex items-center gap-6 list-none m-0 p-0;
+        @apply m-0 flex list-none items-center gap-6 p-0;
     }
     /* Drop-down sub-menu */
     nav .sub-menu {
-        @apply absolute top-full left-0 min-w-40 flex flex-col gap-0 list-none m-0 p-1
-               bg-slate-900 border border-slate-700 rounded-lg shadow-xl opacity-0 invisible
-               transition-all duration-150 translate-y-1;
+        @apply invisible absolute top-full left-0 m-0 flex min-w-40 translate-y-1 list-none flex-col gap-0 rounded-lg border border-slate-700 bg-slate-900 p-1 opacity-0 shadow-xl transition-all duration-150;
     }
     nav .menu-item.has-children {
         @apply relative;
     }
     nav .menu-item.has-children:hover > .sub-menu,
     nav .menu-item.has-children:focus-within > .sub-menu {
-        @apply opacity-100 visible translate-y-0;
+        @apply visible translate-y-0 opacity-100;
     }
     /* Links */
     nav .menu-link {
-        @apply text-slate-300 text-sm font-medium hover:text-white transition-colors
-               px-3 py-2 rounded-md block;
+        @apply block rounded-md px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:text-white;
     }
     nav .nav-list > .menu-item > .menu-link {
         @apply px-0 py-1;

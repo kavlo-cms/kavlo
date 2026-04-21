@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { ChevronDown, ChevronUp, GripVertical, Plus, Trash2 } from 'lucide-vue-next';
-import { ref } from 'vue';
+import {
+    ChevronDown,
+    ChevronUp,
+    GripVertical,
+    Plus,
+    Trash2,
+} from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import type { StyleValue } from 'vue';
 import { VueDraggable } from 'vue-draggable-plus';
 import { useBlockSchemas } from '@/composables/useBlockSchemas';
 import type { AvailableBlock } from '@/composables/useBlockSchemas';
@@ -47,6 +54,12 @@ const deviceMaxWidths: Record<Device, string | null> = {
     mobile: '390px',
 };
 
+const canvasStyle = computed<StyleValue>(() => {
+    const maxWidth = deviceMaxWidths[props.device];
+
+    return maxWidth ? { maxWidth } : undefined;
+});
+
 function blockLabel(block: Block): string {
     return getSchema(block.type)?.label ?? block.type;
 }
@@ -91,7 +104,9 @@ async function onCanvasDrop(e: DragEvent) {
     }
 
     // Only handle file drops (not block drags from palette)
-    const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith('image/'));
+    const files = Array.from(e.dataTransfer.files).filter((f) =>
+        f.type.startsWith('image/'),
+    );
 
     if (!files.length) {
         canvasDragOver.value = false;
@@ -105,8 +120,14 @@ async function onCanvasDrop(e: DragEvent) {
 
     function getCsrfToken(): string {
         return (document.cookie.match(/XSRF-TOKEN=([^;]+)/) ?? [])[1]
-            ? decodeURIComponent((document.cookie.match(/XSRF-TOKEN=([^;]+)/) ?? [])[1])
-            : (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
+            ? decodeURIComponent(
+                  (document.cookie.match(/XSRF-TOKEN=([^;]+)/) ?? [])[1],
+              )
+            : ((
+                  document.querySelector(
+                      'meta[name="csrf-token"]',
+                  ) as HTMLMetaElement
+              )?.content ?? '');
     }
 
     try {
@@ -142,8 +163,15 @@ async function onCanvasDrop(e: DragEvent) {
     <!-- Outer scrollable viewport -->
     <div
         class="relative flex min-w-0 flex-1 overflow-y-auto transition-colors duration-300"
-        :class="device !== 'desktop' ? 'bg-muted/20 py-8' : (themeConfig?.canvas?.class ?? 'bg-background')"
-        @click="emit('select', null); inserterOpenAt = null"
+        :class="
+            device !== 'desktop'
+                ? 'bg-muted/20 py-8'
+                : (themeConfig?.canvas?.class ?? 'bg-background')
+        "
+        @click="
+            emit('select', null);
+            inserterOpenAt = null;
+        "
         @dragover="onCanvasDragOver"
         @dragleave="onCanvasDragLeave"
         @drop="onCanvasDrop"
@@ -151,11 +179,17 @@ async function onCanvasDrop(e: DragEvent) {
         <!-- File drop overlay -->
         <div
             v-if="canvasDragOver || canvasUploading"
-            class="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-primary/10 ring-2 ring-inset ring-primary"
+            class="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-primary/10 ring-2 ring-primary ring-inset"
         >
-            <div class="rounded-xl bg-background/90 px-6 py-4 text-center shadow-lg">
+            <div
+                class="rounded-xl bg-background/90 px-6 py-4 text-center shadow-lg"
+            >
                 <p class="text-sm font-semibold text-primary">
-                    {{ canvasUploading ? 'Uploading…' : 'Drop image to upload & insert' }}
+                    {{
+                        canvasUploading
+                            ? 'Uploading…'
+                            : 'Drop image to upload & insert'
+                    }}
                 </p>
             </div>
         </div>
@@ -170,19 +204,26 @@ async function onCanvasDrop(e: DragEvent) {
         <div
             class="mx-auto w-full transition-all duration-300"
             :class="[
-                device !== 'desktop' ? 'rounded-xl shadow-2xl ring-1 ring-border' : '',
+                device !== 'desktop'
+                    ? 'rounded-xl shadow-2xl ring-1 ring-border'
+                    : '',
                 themeConfig?.canvas?.class ?? 'bg-background',
             ]"
-            :style="deviceMaxWidths[device] ? { maxWidth: deviceMaxWidths[device] } : {}"
+            :style="canvasStyle"
         >
             <!-- Inline page title -->
-            <div class="mx-auto w-full max-w-2xl px-8 pb-4 pt-10" @click.stop>
+            <div class="mx-auto w-full max-w-2xl px-8 pt-10 pb-4" @click.stop>
                 <input
                     type="text"
                     :value="title"
                     :placeholder="titlePlaceholder ?? 'Add title'"
-                    class="w-full border-none bg-transparent text-3xl font-bold placeholder:text-current/30 focus:outline-none focus:ring-0"
-                    @input="emit('update:title', ($event.target as HTMLInputElement).value)"
+                    class="w-full border-none bg-transparent text-3xl font-bold placeholder:text-current/30 focus:ring-0 focus:outline-none"
+                    @input="
+                        emit(
+                            'update:title',
+                            ($event.target as HTMLInputElement).value,
+                        )
+                    "
                 />
             </div>
 
@@ -192,8 +233,12 @@ async function onCanvasDrop(e: DragEvent) {
                 class="flex flex-col items-center justify-center gap-2 py-14"
                 @click.stop
             >
-                <p class="text-sm text-muted-foreground">Your {{ entityLabel ?? 'page' }} has no blocks yet</p>
-                <p class="text-xs text-muted-foreground/60">Drag a block from the sidebar or click Add block</p>
+                <p class="text-sm text-muted-foreground">
+                    Your {{ entityLabel ?? 'page' }} has no blocks yet
+                </p>
+                <p class="text-xs text-muted-foreground/60">
+                    Drag a block from the sidebar or click Add block
+                </p>
                 <div class="relative mt-2">
                     <button
                         class="flex items-center gap-2 rounded-md border bg-background px-4 py-2 text-sm shadow-sm transition-colors hover:bg-accent"
@@ -204,7 +249,7 @@ async function onCanvasDrop(e: DragEvent) {
                     </button>
                     <div
                         v-if="inserterOpenAt === 0"
-                        class="absolute left-1/2 top-full z-50 mt-1 min-w-[10rem] -translate-x-1/2 rounded-lg border bg-background p-1 shadow-lg"
+                        class="absolute top-full left-1/2 z-50 mt-1 min-w-[10rem] -translate-x-1/2 rounded-lg border bg-background p-1 shadow-lg"
                         @click.stop
                     >
                         <button
@@ -220,9 +265,15 @@ async function onCanvasDrop(e: DragEvent) {
             </div>
 
             <!-- Inserter before first block -->
-            <div v-if="blocks.length > 0" class="relative flex items-center px-4 py-1" @click.stop>
+            <div
+                v-if="blocks.length > 0"
+                class="relative flex items-center px-4 py-1"
+                @click.stop
+            >
                 <div class="group/ins flex w-full items-center gap-1">
-                    <div class="h-px flex-1 bg-transparent transition-colors group-hover/ins:bg-primary/40" />
+                    <div
+                        class="h-px flex-1 bg-transparent transition-colors group-hover/ins:bg-primary/40"
+                    />
                     <button
                         class="flex h-5 w-5 items-center justify-center rounded-full border border-transparent bg-transparent text-transparent transition-all group-hover/ins:border-primary group-hover/ins:bg-primary/10 group-hover/ins:text-primary"
                         title="Insert block here"
@@ -230,11 +281,13 @@ async function onCanvasDrop(e: DragEvent) {
                     >
                         <Plus class="h-3 w-3" />
                     </button>
-                    <div class="h-px flex-1 bg-transparent transition-colors group-hover/ins:bg-primary/40" />
+                    <div
+                        class="h-px flex-1 bg-transparent transition-colors group-hover/ins:bg-primary/40"
+                    />
                 </div>
                 <div
                     v-if="inserterOpenAt === 0"
-                    class="absolute left-1/2 top-full z-50 mt-1 min-w-[10rem] -translate-x-1/2 rounded-lg border bg-background p-1 shadow-lg"
+                    class="absolute top-full left-1/2 z-50 mt-1 min-w-[10rem] -translate-x-1/2 rounded-lg border bg-background p-1 shadow-lg"
                     @click.stop
                 >
                     <button
@@ -256,100 +309,120 @@ async function onCanvasDrop(e: DragEvent) {
                 handle=".drag-handle"
                 ghost-class="opacity-30"
                 class="transition-all duration-200"
-                :class="blocks.length === 0
-                    ? 'mx-8 mb-8 min-h-40 rounded-xl border-2 border-dashed border-primary/20 flex items-center justify-center text-xs text-muted-foreground/40 select-none'
-                    : ''"
+                :class="
+                    blocks.length === 0
+                        ? 'mx-8 mb-8 flex min-h-40 items-center justify-center rounded-xl border-2 border-dashed border-primary/20 text-xs text-muted-foreground/40 select-none'
+                        : ''
+                "
                 @update:model-value="emit('update:blocks', $event)"
             >
                 <template v-if="blocks.length === 0">
                     <span class="pointer-events-none">Drop here</span>
                 </template>
+                <div v-for="(block, index) in blocks" :key="block.id">
+                    <!-- Block wrapper -->
                     <div
-                        v-for="(block, index) in blocks"
-                        :key="block.id"
+                        class="group relative cursor-default"
+                        :class="
+                            selectedBlockId === block.id
+                                ? 'ring-2 ring-primary ring-inset'
+                                : 'ring-1 ring-transparent ring-inset hover:ring-primary/30'
+                        "
+                        @click.stop="
+                            emit('select', block.id);
+                            inserterOpenAt = null;
+                        "
                     >
-                        <!-- Block wrapper -->
+                        <component
+                            :is="getBlockPreview(block.type)"
+                            :type="block.type"
+                            :data="block.data"
+                            @update:data="
+                                emit('update:blockData', block.id, $event)
+                            "
+                        />
+
+                        <!-- Floating toolbar -->
                         <div
-                            class="group relative cursor-default"
-                            :class="selectedBlockId === block.id
-                                ? 'ring-2 ring-inset ring-primary'
-                                : 'ring-1 ring-inset ring-transparent hover:ring-primary/30'"
-                            @click.stop="emit('select', block.id); inserterOpenAt = null"
+                            class="absolute top-2 left-1/2 z-20 flex -translate-x-1/2 items-center gap-0.5 rounded-md border bg-background/95 px-1.5 py-1 shadow transition-opacity"
+                            :class="
+                                selectedBlockId === block.id
+                                    ? 'pointer-events-auto opacity-100'
+                                    : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'
+                            "
                         >
-                            <component
-                                :is="getBlockPreview(block.type)"
-                                :type="block.type"
-                                :data="block.data"
-                                @update:data="emit('update:blockData', block.id, $event)"
+                            <GripVertical
+                                class="drag-handle h-4 w-4 cursor-grab text-muted-foreground"
                             />
-
-                            <!-- Floating toolbar -->
-                            <div
-                                class="absolute left-1/2 top-2 z-20 -translate-x-1/2 flex items-center gap-0.5 rounded-md border bg-background/95 px-1.5 py-1 shadow transition-opacity"
-                                :class="selectedBlockId === block.id
-                                    ? 'opacity-100 pointer-events-auto'
-                                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'"
+                            <span
+                                class="px-1 text-xs font-medium text-muted-foreground"
+                                >{{ blockLabel(block) }}</span
                             >
-                                <GripVertical class="drag-handle h-4 w-4 cursor-grab text-muted-foreground" />
-                                <span class="px-1 text-xs font-medium text-muted-foreground">{{ blockLabel(block) }}</span>
-                                <div class="mx-0.5 h-3 w-px bg-border" />
-                                <button
-                                    class="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-                                    title="Move up"
-                                    :disabled="index === 0"
-                                    @click.stop="emit('move-up', block.id)"
-                                >
-                                    <ChevronUp class="h-3.5 w-3.5" />
-                                </button>
-                                <button
-                                    class="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-                                    title="Move down"
-                                    :disabled="index === blocks.length - 1"
-                                    @click.stop="emit('move-down', block.id)"
-                                >
-                                    <ChevronDown class="h-3.5 w-3.5" />
-                                </button>
-                                <div class="mx-0.5 h-3 w-px bg-border" />
-                                <button
-                                    class="rounded p-0.5 text-muted-foreground transition-colors hover:text-destructive"
-                                    title="Remove block"
-                                    @click.stop="emit('remove', block.id)"
-                                >
-                                    <Trash2 class="h-3.5 w-3.5" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Inserter after this block -->
-                        <div class="relative flex items-center px-4 py-1" @click.stop>
-                            <div class="group/ins flex w-full items-center gap-1">
-                                <div class="h-px flex-1 bg-transparent transition-colors group-hover/ins:bg-primary/40" />
-                                <button
-                                    class="flex h-5 w-5 items-center justify-center rounded-full border border-transparent bg-transparent text-transparent transition-all group-hover/ins:border-primary group-hover/ins:bg-primary/10 group-hover/ins:text-primary"
-                                    title="Insert block here"
-                                    @click.stop="openInserter(index + 1)"
-                                >
-                                    <Plus class="h-3 w-3" />
-                                </button>
-                                <div class="h-px flex-1 bg-transparent transition-colors group-hover/ins:bg-primary/40" />
-                            </div>
-                            <div
-                                v-if="inserterOpenAt === index + 1"
-                                class="absolute left-1/2 top-full z-50 mt-1 min-w-[10rem] -translate-x-1/2 rounded-lg border bg-background p-1 shadow-lg"
-                                @click.stop
+                            <div class="mx-0.5 h-3 w-px bg-border" />
+                            <button
+                                class="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+                                title="Move up"
+                                :disabled="index === 0"
+                                @click.stop="emit('move-up', block.id)"
                             >
-                                <button
-                                    v-for="b in availableBlocks"
-                                    :key="b.type"
-                                    class="flex w-full items-center gap-2 rounded px-3 py-1.5 text-sm transition-colors hover:bg-accent"
-                                    @click.stop="addBlock(index + 1, b.type)"
-                                >
-                                    {{ b.label }}
-                                </button>
-                            </div>
+                                <ChevronUp class="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                                class="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+                                title="Move down"
+                                :disabled="index === blocks.length - 1"
+                                @click.stop="emit('move-down', block.id)"
+                            >
+                                <ChevronDown class="h-3.5 w-3.5" />
+                            </button>
+                            <div class="mx-0.5 h-3 w-px bg-border" />
+                            <button
+                                class="rounded p-0.5 text-muted-foreground transition-colors hover:text-destructive"
+                                title="Remove block"
+                                @click.stop="emit('remove', block.id)"
+                            >
+                                <Trash2 class="h-3.5 w-3.5" />
+                            </button>
                         </div>
                     </div>
-                </VueDraggable>
+
+                    <!-- Inserter after this block -->
+                    <div
+                        class="relative flex items-center px-4 py-1"
+                        @click.stop
+                    >
+                        <div class="group/ins flex w-full items-center gap-1">
+                            <div
+                                class="h-px flex-1 bg-transparent transition-colors group-hover/ins:bg-primary/40"
+                            />
+                            <button
+                                class="flex h-5 w-5 items-center justify-center rounded-full border border-transparent bg-transparent text-transparent transition-all group-hover/ins:border-primary group-hover/ins:bg-primary/10 group-hover/ins:text-primary"
+                                title="Insert block here"
+                                @click.stop="openInserter(index + 1)"
+                            >
+                                <Plus class="h-3 w-3" />
+                            </button>
+                            <div
+                                class="h-px flex-1 bg-transparent transition-colors group-hover/ins:bg-primary/40"
+                            />
+                        </div>
+                        <div
+                            v-if="inserterOpenAt === index + 1"
+                            class="absolute top-full left-1/2 z-50 mt-1 min-w-[10rem] -translate-x-1/2 rounded-lg border bg-background p-1 shadow-lg"
+                            @click.stop
+                        >
+                            <button
+                                v-for="b in availableBlocks"
+                                :key="b.type"
+                                class="flex w-full items-center gap-2 rounded px-3 py-1.5 text-sm transition-colors hover:bg-accent"
+                                @click.stop="addBlock(index + 1, b.type)"
+                            >
+                                {{ b.label }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </VueDraggable>
         </div>
     </div>
 </template>

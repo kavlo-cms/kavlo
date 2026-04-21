@@ -3,7 +3,15 @@
     "$id": "cms://schemas/backup.schema.json",
     "title": "CMS Backup Manifest",
     "type": "object",
-    "required": ["filename", "created_at", "app_name", "app_url", "laravel", "php", "stats"],
+    "required": [
+        "filename",
+        "created_at",
+        "app_name",
+        "app_url",
+        "laravel",
+        "php",
+        "stats"
+    ],
     "additionalProperties": false,
     "properties": {
         "$schema": {
@@ -43,7 +51,12 @@
         },
         "stats": {
             "type": "object",
-            "required": ["database_tables", "public_files", "plugins", "themes"],
+            "required": [
+                "database_tables",
+                "public_files",
+                "plugins",
+                "themes"
+            ],
             "additionalProperties": false,
             "properties": {
                 "database_tables": {

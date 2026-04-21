@@ -2,7 +2,7 @@
 import { router, useForm } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import { useLocalStorage } from '@vueuse/core';
-import { ArrowLeft, Loader2, Mail, PanelRight, Trash2 } from 'lucide-vue-next';
+import { ArrowLeft, Loader2, PanelRight, Trash2 } from 'lucide-vue-next';
 import { computed, provide, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import type { AvailableBlock } from '@/composables/useBlockSchemas';
@@ -68,11 +68,14 @@ function slugify(value: string) {
         .replace(/-+/g, '-');
 }
 
-watch(() => form.name, (value) => {
-    if (!slugTouched.value) {
-        form.slug = slugify(value);
-    }
-});
+watch(
+    () => form.name,
+    (value) => {
+        if (!slugTouched.value) {
+            form.slug = slugify(value);
+        }
+    },
+);
 
 function startResize(side: 'left' | 'right', e: MouseEvent) {
     const startX = e.clientX;
@@ -82,7 +85,8 @@ function startResize(side: 'left' | 'right', e: MouseEvent) {
     document.body.style.userSelect = 'none';
 
     function onMove(event: MouseEvent) {
-        const delta = side === 'left' ? event.clientX - startX : startX - event.clientX;
+        const delta =
+            side === 'left' ? event.clientX - startX : startX - event.clientX;
         const newWidth = Math.max(180, Math.min(520, startWidth + delta));
 
         if (side === 'left') {
@@ -103,13 +107,21 @@ function startResize(side: 'left' | 'right', e: MouseEvent) {
     document.addEventListener('mouseup', onUp);
 }
 
-function updateBlocksById(blocks: Block[], id: string, newData: Record<string, unknown>): Block[] {
+function updateBlocksById(
+    blocks: Block[],
+    id: string,
+    newData: Record<string, unknown>,
+): Block[] {
     return blocks.map((block) => {
         if (block.id === id) {
             return { ...block, data: newData };
         }
 
-        if (block.type !== 'columns' || typeof block.data !== 'object' || block.data === null) {
+        if (
+            block.type !== 'columns' ||
+            typeof block.data !== 'object' ||
+            block.data === null
+        ) {
             return block;
         }
 
@@ -137,7 +149,11 @@ function removeBlocksById(blocks: Block[], id: string): Block[] {
     return blocks
         .filter((block) => block.id !== id)
         .map((block) => {
-            if (block.type !== 'columns' || typeof block.data !== 'object' || block.data === null) {
+            if (
+                block.type !== 'columns' ||
+                typeof block.data !== 'object' ||
+                block.data === null
+            ) {
                 return block;
             }
 
@@ -167,11 +183,17 @@ function findBlockById(blocks: Block[], id: string): Block | null {
             return block;
         }
 
-        if (block.type !== 'columns' || typeof block.data !== 'object' || block.data === null) {
+        if (
+            block.type !== 'columns' ||
+            typeof block.data !== 'object' ||
+            block.data === null
+        ) {
             continue;
         }
 
-        for (const [key, value] of Object.entries(block.data as Record<string, unknown>)) {
+        for (const [key, value] of Object.entries(
+            block.data as Record<string, unknown>,
+        )) {
             if (!/^col_\d+$/.test(key) || !Array.isArray(value)) {
                 continue;
             }
@@ -200,7 +222,9 @@ function updateBlockData(id: string, data: Record<string, unknown>) {
 }
 
 function insertBlock(index: number, type: string) {
-    const definition = props.availableBlocks.find((block) => block.type === type);
+    const definition = props.availableBlocks.find(
+        (block) => block.type === type,
+    );
     const newBlock: Block = {
         id: crypto.randomUUID(),
         type,
@@ -232,7 +256,9 @@ function moveBlock(id: string, direction: 'up' | 'down') {
     form.blocks = next;
 }
 
-const selectedBlock = computed(() => findBlockById(form.blocks, selectedBlockId.value ?? '') ?? null);
+const selectedBlock = computed(
+    () => findBlockById(form.blocks, selectedBlockId.value ?? '') ?? null,
+);
 
 provide('builderCtx', {
     selectedBlockId,
@@ -249,7 +275,9 @@ function updateTemplateField(field: keyof typeof form, value: unknown) {
 
 function save() {
     if (isEditing.value) {
-        form.put(`/admin/email-templates/${props.template!.id}`, { preserveScroll: true });
+        form.put(`/admin/email-templates/${props.template!.id}`, {
+            preserveScroll: true,
+        });
     } else {
         form.post('/admin/email-templates', { preserveScroll: true });
     }
@@ -279,10 +307,19 @@ function destroyTemplate() {
 
             <div class="flex min-w-0 flex-1 items-center gap-2">
                 <div class="min-w-0 flex-1">
-                    <p class="truncate text-sm font-medium">{{ form.name || 'Untitled template' }}</p>
-                    <p class="truncate text-xs font-mono text-muted-foreground">{{ form.context_key }}</p>
+                    <p class="truncate text-sm font-medium">
+                        {{ form.name || 'Untitled template' }}
+                    </p>
+                    <p class="truncate font-mono text-xs text-muted-foreground">
+                        {{ form.context_key }}
+                    </p>
                 </div>
-                <p v-if="form.errors.blocks" class="hidden text-xs text-destructive sm:block">{{ form.errors.blocks }}</p>
+                <p
+                    v-if="form.errors.blocks"
+                    class="hidden text-xs text-destructive sm:block"
+                >
+                    {{ form.errors.blocks }}
+                </p>
             </div>
 
             <Button
@@ -302,7 +339,10 @@ function destroyTemplate() {
                 :disabled="form.processing"
                 @click="save"
             >
-                <Loader2 v-if="form.processing" class="h-3.5 w-3.5 animate-spin" />
+                <Loader2
+                    v-if="form.processing"
+                    class="h-3.5 w-3.5 animate-spin"
+                />
                 Save
             </Button>
 
@@ -310,7 +350,11 @@ function destroyTemplate() {
 
             <button
                 class="flex h-8 w-8 items-center justify-center rounded-md transition-colors"
-                :class="sidebarOpen ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
+                :class="
+                    sidebarOpen
+                        ? 'bg-accent text-foreground'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                "
                 title="Toggle settings panel"
                 @click="sidebarOpen = !sidebarOpen"
             >
@@ -320,11 +364,17 @@ function destroyTemplate() {
 
         <template #default>
             <div class="flex min-h-0 flex-1 overflow-hidden">
-                <div class="hidden h-full shrink-0 md:flex" :style="{ width: `${leftWidth}px` }">
+                <div
+                    class="hidden h-full shrink-0 md:flex"
+                    :style="{ width: `${leftWidth}px` }"
+                >
                     <BlockPalette :available-blocks="availableBlocks" />
                 </div>
 
-                <div class="hidden w-1 shrink-0 cursor-col-resize bg-border/60 transition hover:bg-primary/40 md:block" @mousedown="startResize('left', $event)" />
+                <div
+                    class="hidden w-1 shrink-0 cursor-col-resize bg-border/60 transition hover:bg-primary/40 md:block"
+                    @mousedown="startResize('left', $event)"
+                />
 
                 <div class="min-w-0 flex-1 overflow-hidden">
                     <BlockCanvas
@@ -349,9 +399,15 @@ function destroyTemplate() {
                 </div>
 
                 <template v-if="sidebarOpen">
-                    <div class="hidden w-1 shrink-0 cursor-col-resize bg-border/60 transition hover:bg-primary/40 lg:block" @mousedown="startResize('right', $event)" />
+                    <div
+                        class="hidden w-1 shrink-0 cursor-col-resize bg-border/60 transition hover:bg-primary/40 lg:block"
+                        @mousedown="startResize('right', $event)"
+                    />
 
-                    <div class="hidden h-full shrink-0 lg:flex" :style="{ width: `${rightWidth}px` }">
+                    <div
+                        class="hidden h-full shrink-0 lg:flex"
+                        :style="{ width: `${rightWidth}px` }"
+                    >
                         <TemplateSettingsPanel
                             :form="form"
                             :selected-block="selectedBlock"

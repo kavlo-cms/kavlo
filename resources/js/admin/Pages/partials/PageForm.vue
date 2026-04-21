@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
@@ -36,19 +42,20 @@ const props = defineProps<{
 }>();
 
 const pageProps = usePage<{ pageTypes?: PageType[] }>().props;
-const resolvedTypes: PageType[] = props.pageTypes ?? pageProps.pageTypes ?? [
-    { type: 'page', label: 'Standard Page', view: 'pages.show' },
-];
+const resolvedTypes: PageType[] = props.pageTypes ??
+    pageProps.pageTypes ?? [
+        { type: 'page', label: 'Standard Page', view: 'pages.show' },
+    ];
 
 const isEditing = !!props.page?.id;
 
 const form = useForm({
-    title:        props.page?.title        ?? '',
-    slug:         props.page?.slug         ?? '',
-    type:         props.page?.type         ?? 'page',
-    content:      props.page?.content      ?? '',
+    title: props.page?.title ?? '',
+    slug: props.page?.slug ?? '',
+    type: props.page?.type ?? 'page',
+    content: props.page?.content ?? '',
     is_published: props.page?.is_published ?? false,
-    is_homepage:  props.page?.is_homepage  ?? false,
+    is_homepage: props.page?.is_homepage ?? false,
 });
 
 function slugify(value: string) {
@@ -62,11 +69,14 @@ function slugify(value: string) {
 
 const slugTouched = ref(isEditing);
 
-watch(() => form.title, (val) => {
-    if (!slugTouched.value) {
-        form.slug = slugify(val);
-    }
-});
+watch(
+    () => form.title,
+    (val) => {
+        if (!slugTouched.value) {
+            form.slug = slugify(val);
+        }
+    },
+);
 
 function submit() {
     if (isEditing) {
@@ -88,7 +98,7 @@ function deletePage() {
         <div class="grid gap-6 lg:grid-cols-3">
             <!-- Main content -->
             <div class="flex flex-col gap-4 lg:col-span-2">
-                <div class="rounded-lg border p-6 flex flex-col gap-4">
+                <div class="flex flex-col gap-4 rounded-lg border p-6">
                     <div class="grid gap-2">
                         <Label for="title">Title</Label>
                         <Input
@@ -97,22 +107,36 @@ function deletePage() {
                             placeholder="Page title"
                             :class="{ 'border-destructive': form.errors.title }"
                         />
-                        <p v-if="form.errors.title" class="text-sm text-destructive">{{ form.errors.title }}</p>
+                        <p
+                            v-if="form.errors.title"
+                            class="text-sm text-destructive"
+                        >
+                            {{ form.errors.title }}
+                        </p>
                     </div>
 
                     <div class="grid gap-2">
                         <Label for="slug">Slug</Label>
-                        <div class="flex items-center rounded-md border focus-within:ring-2 focus-within:ring-ring">
-                            <span class="pl-3 text-sm text-muted-foreground">/</span>
+                        <div
+                            class="flex items-center rounded-md border focus-within:ring-2 focus-within:ring-ring"
+                        >
+                            <span class="pl-3 text-sm text-muted-foreground"
+                                >/</span
+                            >
                             <input
                                 id="slug"
                                 v-model="form.slug"
                                 @input="slugTouched = true"
-                                class="flex-1 bg-transparent py-2 pr-3 pl-1 text-sm outline-none placeholder:text-muted-foreground font-mono"
+                                class="flex-1 bg-transparent py-2 pr-3 pl-1 font-mono text-sm outline-none placeholder:text-muted-foreground"
                                 placeholder="page-slug"
                             />
                         </div>
-                        <p v-if="form.errors.slug" class="text-sm text-destructive">{{ form.errors.slug }}</p>
+                        <p
+                            v-if="form.errors.slug"
+                            class="text-sm text-destructive"
+                        >
+                            {{ form.errors.slug }}
+                        </p>
                     </div>
 
                     <div class="grid gap-2">
@@ -129,8 +153,8 @@ function deletePage() {
 
             <!-- Sidebar -->
             <div class="flex flex-col gap-4">
-                <div class="rounded-lg border p-6 flex flex-col gap-4">
-                    <h3 class="font-medium text-sm">Settings</h3>
+                <div class="flex flex-col gap-4 rounded-lg border p-6">
+                    <h3 class="text-sm font-medium">Settings</h3>
                     <Separator />
 
                     <div class="grid gap-2">
@@ -157,8 +181,12 @@ function deletePage() {
 
                     <div class="flex items-center justify-between gap-4">
                         <div>
-                            <Label for="is_published" class="text-sm">Published</Label>
-                            <p class="text-xs text-muted-foreground">Make this page visible</p>
+                            <Label for="is_published" class="text-sm"
+                                >Published</Label
+                            >
+                            <p class="text-xs text-muted-foreground">
+                                Make this page visible
+                            </p>
                         </div>
                         <Switch id="is_published" v-model="form.is_published" />
                     </div>
@@ -166,8 +194,14 @@ function deletePage() {
                     <div class="flex items-center gap-2">
                         <Checkbox id="is_homepage" v-model="form.is_homepage" />
                         <div>
-                            <Label for="is_homepage" class="text-sm cursor-pointer">Set as homepage</Label>
-                            <p class="text-xs text-muted-foreground">Replaces the current homepage</p>
+                            <Label
+                                for="is_homepage"
+                                class="cursor-pointer text-sm"
+                                >Set as homepage</Label
+                            >
+                            <p class="text-xs text-muted-foreground">
+                                Replaces the current homepage
+                            </p>
                         </div>
                     </div>
                 </div>

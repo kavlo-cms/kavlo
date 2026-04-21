@@ -14,7 +14,9 @@ const form = useForm({
     recovery_code: '',
 });
 
-const activeError = computed(() => form.errors.code || form.errors.recovery_code);
+const activeError = computed(
+    () => form.errors.code || form.errors.recovery_code,
+);
 
 function submit() {
     form.post('/two-factor-challenge', {
@@ -26,11 +28,18 @@ function submit() {
 <template>
     <Head title="Two-factor challenge" />
 
-    <AuthLayout title="Two-factor authentication" description="Enter your authenticator code or a recovery code.">
+    <AuthLayout
+        title="Two-factor authentication"
+        description="Enter your authenticator code or a recovery code."
+    >
         <form class="space-y-4" @submit.prevent="submit">
             <div class="space-y-2">
                 <Label :for="useRecoveryCode ? 'recovery_code' : 'code'">
-                    {{ useRecoveryCode ? 'Recovery code' : 'Authentication code' }}
+                    {{
+                        useRecoveryCode
+                            ? 'Recovery code'
+                            : 'Authentication code'
+                    }}
                 </Label>
                 <Input
                     v-if="!useRecoveryCode"
@@ -60,7 +69,11 @@ function submit() {
             class="mt-6 w-full text-sm text-muted-foreground hover:text-foreground"
             @click="useRecoveryCode = !useRecoveryCode"
         >
-            {{ useRecoveryCode ? 'Use an authentication code instead' : 'Use a recovery code instead' }}
+            {{
+                useRecoveryCode
+                    ? 'Use an authentication code instead'
+                    : 'Use a recovery code instead'
+            }}
         </button>
     </AuthLayout>
 </template>

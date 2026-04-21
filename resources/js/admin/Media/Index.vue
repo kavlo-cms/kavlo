@@ -41,9 +41,7 @@ const props = defineProps<{
     initialMedia: MediaItem[];
 }>();
 
-const breadcrumbs = [
-    { title: 'Media Library', href: '/admin/media' },
-];
+const breadcrumbs = [{ title: 'Media Library', href: '/admin/media' }];
 
 const uploadAccept = [
     'image/*',
@@ -72,7 +70,9 @@ const kindFilters = [
     { value: 'file', label: 'Other' },
 ] as const;
 
-const folders = ref<string[]>(props.folders.length ? props.folders : ['uploads']);
+const folders = ref<string[]>(
+    props.folders.length ? props.folders : ['uploads'],
+);
 const activeFolder = ref(folders.value[0] ?? 'uploads');
 const mediaItems = ref<MediaItem[]>(props.initialMedia);
 const search = ref('');
@@ -91,14 +91,16 @@ const filteredItems = computed(() => {
     const q = search.value.trim().toLowerCase();
 
     return mediaItems.value.filter((item) => {
-        const matchesSearch = !q
-            || item.name.toLowerCase().includes(q)
-            || item.file_name.toLowerCase().includes(q)
-            || item.extension.toLowerCase().includes(q)
-            || item.mime_type.toLowerCase().includes(q);
+        const matchesSearch =
+            !q ||
+            item.name.toLowerCase().includes(q) ||
+            item.file_name.toLowerCase().includes(q) ||
+            item.extension.toLowerCase().includes(q) ||
+            item.mime_type.toLowerCase().includes(q);
 
-        const matchesKind = activeKind.value === 'all'
-            || (activeKind.value === 'document'
+        const matchesKind =
+            activeKind.value === 'all' ||
+            (activeKind.value === 'document'
                 ? ['document', 'pdf'].includes(item.kind)
                 : item.kind === activeKind.value);
 
@@ -106,17 +108,27 @@ const filteredItems = computed(() => {
     });
 });
 
-const selectedItems = computed(() => mediaItems.value.filter((item) => selectedIds.value.includes(item.id)));
-const detailItem = computed(() => selectedItems.value.length === 1 ? selectedItems.value[0] : null);
+const selectedItems = computed(() =>
+    mediaItems.value.filter((item) => selectedIds.value.includes(item.id)),
+);
+const detailItem = computed<MediaItem | null>(() =>
+    selectedItems.value.length === 1 ? (selectedItems.value[0] ?? null) : null,
+);
 
 function getCsrfToken(): string {
     return (document.cookie.match(/XSRF-TOKEN=([^;]+)/) ?? [])[1]
-        ? decodeURIComponent((document.cookie.match(/XSRF-TOKEN=([^;]+)/) ?? [])[1])
-        : (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
+        ? decodeURIComponent(
+              (document.cookie.match(/XSRF-TOKEN=([^;]+)/) ?? [])[1],
+          )
+        : ((
+              document.querySelector(
+                  'meta[name="csrf-token"]',
+              ) as HTMLMetaElement
+          )?.content ?? '');
 }
 
 const reqHeaders = () => ({
-    'Accept': 'application/json',
+    Accept: 'application/json',
     'X-Requested-With': 'XMLHttpRequest',
     'X-XSRF-TOKEN': getCsrfToken(),
 });
@@ -124,13 +136,18 @@ const reqHeaders = () => ({
 async function loadMedia(folder = activeFolder.value) {
     loading.value = true;
     try {
-        const res = await fetch(`/admin/media/list?folder=${encodeURIComponent(folder)}&per_page=80`, {
-            headers: reqHeaders(),
-        });
+        const res = await fetch(
+            `/admin/media/list?folder=${encodeURIComponent(folder)}&per_page=80`,
+            {
+                headers: reqHeaders(),
+            },
+        );
         if (res.ok) {
             const data = await res.json();
             mediaItems.value = data.data;
-            selectedIds.value = selectedIds.value.filter((id) => data.data.some((item: MediaItem) => item.id === id));
+            selectedIds.value = selectedIds.value.filter((id) =>
+                data.data.some((item: MediaItem) => item.id === id),
+            );
         }
     } finally {
         loading.value = false;
@@ -159,7 +176,10 @@ async function uploadFiles(files: FileList | File[]) {
                 continue;
             }
 
-            uploadError.value = await extractError(res, `Uploading "${file.name}" failed.`);
+            uploadError.value = await extractError(
+                res,
+                `Uploading "${file.name}" failed.`,
+            );
             break;
         }
     } finally {
@@ -213,25 +233,40 @@ async function saveFolder(item: MediaItem, folder: string) {
         }
 
         if (updated.folder !== activeFolder.value) {
-            mediaItems.value = mediaItems.value.filter((entry) => entry.id !== updated.id);
-            selectedIds.value = selectedIds.value.filter((id) => id !== updated.id);
+            mediaItems.value = mediaItems.value.filter(
+                (entry) => entry.id !== updated.id,
+            );
+            selectedIds.value = selectedIds.value.filter(
+                (id) => id !== updated.id,
+            );
         }
     }
 }
 
-async function deleteMedia(item: MediaItem, force = false, skipConfirm = false) {
+async function deleteMedia(
+    item: MediaItem,
+    force = false,
+    skipConfirm = false,
+) {
     if (!force && !skipConfirm && !confirm(`Delete "${item.name}"?`)) return;
 
-    const res = await fetch(`/admin/media/${item.id}${force ? '?force=1' : ''}`, {
-        method: 'DELETE',
-        headers: reqHeaders(),
-    });
+    const res = await fetch(
+        `/admin/media/${item.id}${force ? '?force=1' : ''}`,
+        {
+            method: 'DELETE',
+            headers: reqHeaders(),
+        },
+    );
 
     if (res.status === 422) {
         const payload = await res.json();
         const usageCount = payload?.usage?.count ?? item.usage_count;
 
-        if (confirm(`"${item.name}" is still used in ${usageCount} place(s). Delete it anyway?`)) {
+        if (
+            confirm(
+                `"${item.name}" is still used in ${usageCount} place(s). Delete it anyway?`,
+            )
+        ) {
             await deleteMedia(item, true);
         }
 
@@ -249,8 +284,13 @@ function syncItem(updated: MediaItem) {
     if (idx !== -1) mediaItems.value[idx] = updated;
 }
 
-function onDragOver(e: DragEvent) { e.preventDefault(); isDragOver.value = true; }
-function onDragLeave() { isDragOver.value = false; }
+function onDragOver(e: DragEvent) {
+    e.preventDefault();
+    isDragOver.value = true;
+}
+function onDragLeave() {
+    isDragOver.value = false;
+}
 async function onDrop(e: DragEvent) {
     e.preventDefault();
     isDragOver.value = false;
@@ -299,11 +339,16 @@ async function moveSelected(folder: string) {
         await saveFolder(item, folder);
     }
 
-    selectedIds.value = selectedIds.value.filter((id) => mediaItems.value.some((item) => item.id === id));
+    selectedIds.value = selectedIds.value.filter((id) =>
+        mediaItems.value.some((item) => item.id === id),
+    );
 }
 
 async function deleteSelected() {
-    if (!selectedItems.value.length || !confirm(`Delete ${selectedItems.value.length} selected file(s)?`)) {
+    if (
+        !selectedItems.value.length ||
+        !confirm(`Delete ${selectedItems.value.length} selected file(s)?`)
+    ) {
         return;
     }
 
@@ -333,14 +378,19 @@ async function extractError(res: Response, fallback: string): Promise<string> {
 
     if (contentType.includes('application/json')) {
         const payload = await res.json();
-        const errors = payload?.errors ? Object.values(payload.errors).flat() : [];
+        const errors = payload?.errors
+            ? Object.values(payload.errors).flat()
+            : [];
         const firstError = errors.find((value) => typeof value === 'string');
 
         if (typeof firstError === 'string' && firstError.length > 0) {
             return firstError;
         }
 
-        if (typeof payload?.message === 'string' && payload.message.length > 0) {
+        if (
+            typeof payload?.message === 'string' &&
+            payload.message.length > 0
+        ) {
             return payload.message;
         }
     }
@@ -350,50 +400,67 @@ async function extractError(res: Response, fallback: string): Promise<string> {
 
 function itemKindLabel(item: MediaItem): string {
     switch (item.kind) {
-    case 'image': return 'Image';
-    case 'video': return 'Video';
-    case 'audio': return 'Audio';
-    case 'pdf': return 'PDF';
-    case 'document': return 'Document';
-    case 'archive': return 'Archive';
-    default: return 'File';
+        case 'image':
+            return 'Image';
+        case 'video':
+            return 'Video';
+        case 'audio':
+            return 'Audio';
+        case 'pdf':
+            return 'PDF';
+        case 'document':
+            return 'Document';
+        case 'archive':
+            return 'Archive';
+        default:
+            return 'File';
     }
 }
 
 function itemIcon(item: MediaItem) {
     switch (item.kind) {
-    case 'image': return ImageIcon;
-    case 'video': return Video;
-    case 'audio': return Music;
-    case 'pdf':
-    case 'document': return FileText;
-    case 'archive': return Archive;
-    default: return File;
+        case 'image':
+            return ImageIcon;
+        case 'video':
+            return Video;
+        case 'audio':
+            return Music;
+        case 'pdf':
+        case 'document':
+            return FileText;
+        case 'archive':
+            return Archive;
+        default:
+            return File;
     }
 }
 
-function isImage(item: MediaItem | null): item is MediaItem {
+function isImage(item: MediaItem | null): boolean {
     return item?.kind === 'image';
 }
 
-function isVideo(item: MediaItem | null): item is MediaItem {
+function isVideo(item: MediaItem | null): boolean {
     return item?.kind === 'video';
 }
 
-function isAudio(item: MediaItem | null): item is MediaItem {
+function isAudio(item: MediaItem | null): boolean {
     return item?.kind === 'audio';
 }
 
-function isPdf(item: MediaItem | null): item is MediaItem {
+function isPdf(item: MediaItem | null): boolean {
     return item?.kind === 'pdf';
 }
 </script>
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="relative flex h-[calc(100vh-6rem)] overflow-hidden rounded-lg border bg-background shadow-sm">
+        <div
+            class="relative flex h-[calc(100vh-6rem)] overflow-hidden rounded-lg border bg-background shadow-sm"
+        >
             <aside class="flex w-48 shrink-0 flex-col border-r">
-                <div class="flex items-center justify-between border-b px-3 py-3">
+                <div
+                    class="flex items-center justify-between border-b px-3 py-3"
+                >
                     <span class="text-sm font-semibold">Folders</span>
                     <button
                         class="rounded p-0.5 text-muted-foreground hover:text-foreground"
@@ -409,11 +476,16 @@ function isPdf(item: MediaItem | null): item is MediaItem {
                         <input
                             v-model="newFolderName"
                             placeholder="folder-name"
-                            class="min-w-0 flex-1 rounded border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                            class="min-w-0 flex-1 rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-ring focus:outline-none"
                             @keydown.enter="createFolder"
                             @keydown.esc="showNewFolder = false"
                         />
-                        <button class="rounded bg-primary px-2 py-1 text-xs text-primary-foreground" @click="createFolder">Add</button>
+                        <button
+                            class="rounded bg-primary px-2 py-1 text-xs text-primary-foreground"
+                            @click="createFolder"
+                        >
+                            Add
+                        </button>
                     </div>
                 </div>
 
@@ -422,9 +494,11 @@ function isPdf(item: MediaItem | null): item is MediaItem {
                         v-for="folder in folders"
                         :key="folder"
                         class="flex items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors"
-                        :class="activeFolder === folder
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
+                        :class="
+                            activeFolder === folder
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        "
                         @click="activeFolder = folder"
                     >
                         <FolderOpen class="h-4 w-4 shrink-0" />
@@ -437,23 +511,51 @@ function isPdf(item: MediaItem | null): item is MediaItem {
                 <div class="flex shrink-0 flex-col gap-3 border-b px-4 py-3">
                     <div class="flex flex-wrap items-center gap-3">
                         <div class="relative max-w-sm flex-1">
-                            <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input v-model="search" placeholder="Search media…" class="pl-9" />
+                            <Search
+                                class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                            />
+                            <Input
+                                v-model="search"
+                                placeholder="Search media…"
+                                class="pl-9"
+                            />
                         </div>
                         <label class="cursor-pointer">
-                            <input type="file" multiple :accept="uploadAccept" class="sr-only" @change="onFileInput" />
-                            <Button variant="outline" as="span" :disabled="uploading">
+                            <input
+                                type="file"
+                                multiple
+                                :accept="uploadAccept"
+                                class="sr-only"
+                                @change="onFileInput"
+                            />
+                            <Button
+                                variant="outline"
+                                as="span"
+                                :disabled="uploading"
+                            >
                                 <Upload class="mr-2 h-4 w-4" />
                                 {{ uploading ? 'Uploading…' : 'Upload Files' }}
                             </Button>
                         </label>
                     </div>
 
-                    <div v-if="filteredItems.length" class="flex flex-wrap items-center gap-2">
-                        <Button size="sm" variant="outline" @click="selectAllVisible">
+                    <div
+                        v-if="filteredItems.length"
+                        class="flex flex-wrap items-center gap-2"
+                    >
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            @click="selectAllVisible"
+                        >
                             Select visible
                         </Button>
-                        <Button size="sm" variant="outline" :disabled="!selectedIds.length" @click="clearSelection">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            :disabled="!selectedIds.length"
+                            @click="clearSelection"
+                        >
                             Clear selection
                         </Button>
                         <span class="text-xs text-muted-foreground">
@@ -462,18 +564,30 @@ function isPdf(item: MediaItem | null): item is MediaItem {
                         <select
                             v-if="selectedIds.length"
                             class="rounded border bg-background px-2 py-1.5 text-xs"
-                            @change="moveSelected(($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = '';"
+                            @change="
+                                moveSelected(
+                                    ($event.target as HTMLSelectElement).value,
+                                );
+                                ($event.target as HTMLSelectElement).value = '';
+                            "
                         >
                             <option value="">Move selected to...</option>
                             <option
-                                v-for="folder in folders.filter((folder) => folder !== activeFolder)"
+                                v-for="folder in folders.filter(
+                                    (folder) => folder !== activeFolder,
+                                )"
                                 :key="folder"
                                 :value="folder"
                             >
                                 {{ folder }}
                             </option>
                         </select>
-                        <Button v-if="selectedIds.length" size="sm" variant="destructive" @click="deleteSelected">
+                        <Button
+                            v-if="selectedIds.length"
+                            size="sm"
+                            variant="destructive"
+                            @click="deleteSelected"
+                        >
                             Delete selected
                         </Button>
                     </div>
@@ -483,7 +597,11 @@ function isPdf(item: MediaItem | null): item is MediaItem {
                             v-for="filter in kindFilters"
                             :key="filter.value"
                             class="rounded-full border px-3 py-1 text-xs transition-colors"
-                            :class="activeKind === filter.value ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-accent'"
+                            :class="
+                                activeKind === filter.value
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'hover:bg-accent'
+                            "
                             @click="activeKind = filter.value"
                         >
                             {{ filter.label }}
@@ -491,14 +609,21 @@ function isPdf(item: MediaItem | null): item is MediaItem {
                     </div>
 
                     <p class="text-xs text-muted-foreground">
-                        Supports common images, video, audio, PDFs, office files, text/CSV/JSON, and ZIP archives.
+                        Supports common images, video, audio, PDFs, office
+                        files, text/CSV/JSON, and ZIP archives.
                     </p>
-                    <p v-if="uploadError" class="text-xs text-destructive">{{ uploadError }}</p>
+                    <p v-if="uploadError" class="text-xs text-destructive">
+                        {{ uploadError }}
+                    </p>
                 </div>
 
                 <div
                     class="relative flex-1 overflow-y-auto p-4"
-                    :class="isDragOver ? 'ring-2 ring-inset ring-primary bg-primary/5' : ''"
+                    :class="
+                        isDragOver
+                            ? 'bg-primary/5 ring-2 ring-primary ring-inset'
+                            : ''
+                    "
                     @dragover="onDragOver"
                     @dragleave="onDragLeave"
                     @drop="onDrop"
@@ -508,11 +633,18 @@ function isPdf(item: MediaItem | null): item is MediaItem {
                         class="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3"
                     >
                         <Upload class="h-12 w-12 text-primary" />
-                        <p class="text-sm font-medium text-primary">Drop files to upload to "{{ activeFolder }}"</p>
+                        <p class="text-sm font-medium text-primary">
+                            Drop files to upload to "{{ activeFolder }}"
+                        </p>
                     </div>
 
-                    <div v-if="loading" class="flex h-40 items-center justify-center">
-                        <span class="text-sm text-muted-foreground">Loading…</span>
+                    <div
+                        v-if="loading"
+                        class="flex h-40 items-center justify-center"
+                    >
+                        <span class="text-sm text-muted-foreground"
+                            >Loading…</span
+                        >
                     </div>
 
                     <div
@@ -521,19 +653,30 @@ function isPdf(item: MediaItem | null): item is MediaItem {
                     >
                         <ImageIcon class="h-12 w-12 opacity-30" />
                         <p class="text-sm">
-                            {{ search ? `No results for "${search}"` : 'No files in this folder yet' }}
+                            {{
+                                search
+                                    ? `No results for "${search}"`
+                                    : 'No files in this folder yet'
+                            }}
                         </p>
-                        <p class="text-xs">Drag files here or click Upload Files</p>
+                        <p class="text-xs">
+                            Drag files here or click Upload Files
+                        </p>
                     </div>
 
-                    <div v-else class="grid grid-cols-3 gap-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8">
+                    <div
+                        v-else
+                        class="grid grid-cols-3 gap-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8"
+                    >
                         <div
                             v-for="item in filteredItems"
                             :key="item.id"
                             class="group relative cursor-pointer overflow-hidden rounded-xl border-2 transition-all"
-                            :class="selectedIds.includes(item.id)
-                                ? 'border-primary shadow-lg'
-                                : 'border-transparent hover:border-muted-foreground/30'"
+                            :class="
+                                selectedIds.includes(item.id)
+                                    ? 'border-primary shadow-lg'
+                                    : 'border-transparent hover:border-muted-foreground/30'
+                            "
                             @click="toggleSelection(item)"
                         >
                             <div class="aspect-square bg-muted/30">
@@ -552,22 +695,35 @@ function isPdf(item: MediaItem | null): item is MediaItem {
                                     playsinline
                                     preload="metadata"
                                 />
-                                <div v-else class="flex h-full flex-col items-center justify-center gap-2 px-3 text-center">
-                                    <component :is="itemIcon(item)" class="h-8 w-8 text-muted-foreground/50" />
-                                    <span class="rounded bg-background/80 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                                        {{ item.extension || itemKindLabel(item) }}
+                                <div
+                                    v-else
+                                    class="flex h-full flex-col items-center justify-center gap-2 px-3 text-center"
+                                >
+                                    <component
+                                        :is="itemIcon(item)"
+                                        class="h-8 w-8 text-muted-foreground/50"
+                                    />
+                                    <span
+                                        class="rounded bg-background/80 px-2 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase"
+                                    >
+                                        {{
+                                            item.extension ||
+                                            itemKindLabel(item)
+                                        }}
                                     </span>
                                 </div>
                             </div>
 
                             <div
                                 v-if="selectedIds.includes(item.id)"
-                                class="absolute right-1.5 top-1.5 rounded-full bg-primary text-primary-foreground"
+                                class="absolute top-1.5 right-1.5 rounded-full bg-primary text-primary-foreground"
                             >
                                 <CheckCircle2 class="h-4 w-4" />
                             </div>
 
-                            <div class="absolute left-1.5 top-1.5 hidden gap-1 group-hover:flex">
+                            <div
+                                class="absolute top-1.5 left-1.5 hidden gap-1 group-hover:flex"
+                            >
                                 <button
                                     class="rounded bg-destructive/90 p-1 text-destructive-foreground"
                                     title="Delete"
@@ -578,24 +734,40 @@ function isPdf(item: MediaItem | null): item is MediaItem {
                             </div>
 
                             <div class="space-y-1 px-1.5 py-1">
-                                <p class="truncate text-xs text-foreground">{{ item.name }}</p>
-                                <p class="truncate text-[11px] text-muted-foreground">{{ itemKindLabel(item) }}</p>
+                                <p class="truncate text-xs text-foreground">
+                                    {{ item.name }}
+                                </p>
+                                <p
+                                    class="truncate text-[11px] text-muted-foreground"
+                                >
+                                    {{ itemKindLabel(item) }}
+                                </p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <aside v-if="detailItem" class="absolute inset-y-0 right-0 z-20 flex w-72 flex-col border-l bg-background shadow-xl">
-                <div class="flex items-center justify-between border-b px-4 py-3">
+            <aside
+                v-if="detailItem"
+                class="absolute inset-y-0 right-0 z-20 flex w-72 flex-col border-l bg-background shadow-xl"
+            >
+                <div
+                    class="flex items-center justify-between border-b px-4 py-3"
+                >
                     <span class="text-sm font-semibold">File Details</span>
-                    <button class="text-muted-foreground hover:text-foreground" @click="clearSelection">
+                    <button
+                        class="text-muted-foreground hover:text-foreground"
+                        @click="clearSelection"
+                    >
                         <X class="h-4 w-4" />
                     </button>
                 </div>
 
                 <div class="flex flex-col gap-4 overflow-y-auto p-4 text-sm">
-                    <div class="aspect-square overflow-hidden rounded-lg bg-muted/30">
+                    <div
+                        class="aspect-square overflow-hidden rounded-lg bg-muted/30"
+                    >
                         <img
                             v-if="isImage(detailItem)"
                             :src="detailItem.url"
@@ -610,9 +782,17 @@ function isPdf(item: MediaItem | null): item is MediaItem {
                             playsinline
                             preload="metadata"
                         />
-                        <div v-else-if="isAudio(detailItem)" class="flex h-full flex-col items-center justify-center gap-4 p-4">
+                        <div
+                            v-else-if="isAudio(detailItem)"
+                            class="flex h-full flex-col items-center justify-center gap-4 p-4"
+                        >
                             <Music class="h-10 w-10 text-muted-foreground/50" />
-                            <audio :src="detailItem.url" class="w-full" controls preload="metadata" />
+                            <audio
+                                :src="detailItem.url"
+                                class="w-full"
+                                controls
+                                preload="metadata"
+                            />
                         </div>
                         <iframe
                             v-else-if="isPdf(detailItem)"
@@ -620,21 +800,47 @@ function isPdf(item: MediaItem | null): item is MediaItem {
                             class="h-full w-full bg-white"
                             title="PDF preview"
                         />
-                        <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
-                            <component :is="itemIcon(detailItem)" class="h-12 w-12 text-muted-foreground/50" />
+                        <div
+                            v-else
+                            class="flex h-full flex-col items-center justify-center gap-3 px-4 text-center"
+                        >
+                            <component
+                                :is="itemIcon(detailItem)"
+                                class="h-12 w-12 text-muted-foreground/50"
+                            />
                             <div>
-                                <p class="text-sm font-medium">{{ itemKindLabel(detailItem) }}</p>
-                                <p class="text-xs text-muted-foreground uppercase">{{ detailItem.extension || 'file' }}</p>
+                                <p class="text-sm font-medium">
+                                    {{ itemKindLabel(detailItem) }}
+                                </p>
+                                <p
+                                    class="text-xs text-muted-foreground uppercase"
+                                >
+                                    {{ detailItem.extension || 'file' }}
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     <div class="flex gap-2">
-                        <a :href="detailItem.url" target="_blank" rel="noreferrer" class="flex-1">
-                            <Button variant="outline" size="sm" class="w-full">Open</Button>
+                        <a
+                            :href="detailItem.url"
+                            target="_blank"
+                            rel="noreferrer"
+                            class="flex-1"
+                        >
+                            <Button variant="outline" size="sm" class="w-full"
+                                >Open</Button
+                            >
                         </a>
-                        <a :href="detailItem.download_url" target="_blank" rel="noreferrer" class="flex-1">
-                            <Button variant="outline" size="sm" class="w-full">Download</Button>
+                        <a
+                            :href="detailItem.download_url"
+                            target="_blank"
+                            rel="noreferrer"
+                            class="flex-1"
+                        >
+                            <Button variant="outline" size="sm" class="w-full"
+                                >Download</Button
+                            >
                         </a>
                     </div>
 
@@ -644,18 +850,31 @@ function isPdf(item: MediaItem | null): item is MediaItem {
                             <div class="flex gap-1">
                                 <input
                                     v-model="editingName.value"
-                                    class="min-w-0 flex-1 rounded border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                                    class="min-w-0 flex-1 rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-ring focus:outline-none"
                                     @keydown.enter="saveName"
                                     @keydown.esc="editingName = null"
                                 />
-                                <button class="rounded bg-primary px-2 py-1 text-xs text-primary-foreground" @click="saveName">Save</button>
+                                <button
+                                    class="rounded bg-primary px-2 py-1 text-xs text-primary-foreground"
+                                    @click="saveName"
+                                >
+                                    Save
+                                </button>
                             </div>
                         </template>
                         <div v-else class="flex items-center gap-1">
-                            <span class="flex-1 break-all text-xs font-medium">{{ detailItem.name }}</span>
+                            <span
+                                class="flex-1 text-xs font-medium break-all"
+                                >{{ detailItem.name }}</span
+                            >
                             <button
                                 class="rounded p-1 text-muted-foreground hover:text-foreground"
-                                @click="editingName = { id: detailItem.id, value: detailItem.name }"
+                                @click="
+                                    editingName = {
+                                        id: detailItem.id,
+                                        value: detailItem.name,
+                                    }
+                                "
                             >
                                 <Pencil class="h-3 w-3" />
                             </button>
@@ -664,45 +883,85 @@ function isPdf(item: MediaItem | null): item is MediaItem {
 
                     <div class="grid grid-cols-2 gap-3">
                         <div class="flex flex-col gap-0.5">
-                            <span class="text-xs text-muted-foreground">Type</span>
-                            <span class="text-xs">{{ itemKindLabel(detailItem) }}</span>
+                            <span class="text-xs text-muted-foreground"
+                                >Type</span
+                            >
+                            <span class="text-xs">{{
+                                itemKindLabel(detailItem)
+                            }}</span>
                         </div>
                         <div class="flex flex-col gap-0.5">
-                            <span class="text-xs text-muted-foreground">Extension</span>
-                            <span class="text-xs uppercase">{{ detailItem.extension || '-' }}</span>
+                            <span class="text-xs text-muted-foreground"
+                                >Extension</span
+                            >
+                            <span class="text-xs uppercase">{{
+                                detailItem.extension || '-'
+                            }}</span>
                         </div>
                         <div class="flex flex-col gap-0.5">
-                            <span class="text-xs text-muted-foreground">Size</span>
-                            <span class="text-xs">{{ formatSize(detailItem.size) }}</span>
+                            <span class="text-xs text-muted-foreground"
+                                >Size</span
+                            >
+                            <span class="text-xs">{{
+                                formatSize(detailItem.size)
+                            }}</span>
                         </div>
                         <div class="flex flex-col gap-0.5">
-                            <span class="text-xs text-muted-foreground">Added</span>
-                            <span class="text-xs">{{ formatDate(detailItem.created_at) }}</span>
+                            <span class="text-xs text-muted-foreground"
+                                >Added</span
+                            >
+                            <span class="text-xs">{{
+                                formatDate(detailItem.created_at)
+                            }}</span>
                         </div>
                     </div>
 
                     <div class="flex flex-col gap-0.5">
-                        <span class="text-xs text-muted-foreground">MIME type</span>
-                        <span class="break-all text-xs">{{ detailItem.mime_type }}</span>
+                        <span class="text-xs text-muted-foreground"
+                            >MIME type</span
+                        >
+                        <span class="text-xs break-all">{{
+                            detailItem.mime_type
+                        }}</span>
                     </div>
 
                     <div class="flex flex-col gap-1">
-                        <span class="text-xs text-muted-foreground">Folder</span>
+                        <span class="text-xs text-muted-foreground"
+                            >Folder</span
+                        >
                         <select
                             :value="detailItem.folder"
                             class="rounded border bg-background px-2 py-1.5 text-xs"
-                            @change="saveFolder(detailItem, ($event.target as HTMLSelectElement).value)"
+                            @change="
+                                saveFolder(
+                                    detailItem,
+                                    ($event.target as HTMLSelectElement).value,
+                                )
+                            "
                         >
-                            <option v-for="folder in folders" :key="folder" :value="folder">{{ folder }}</option>
+                            <option
+                                v-for="folder in folders"
+                                :key="folder"
+                                :value="folder"
+                            >
+                                {{ folder }}
+                            </option>
                         </select>
                     </div>
 
                     <div class="flex flex-col gap-1">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-muted-foreground">Usage</span>
-                            <span class="text-xs text-muted-foreground">{{ detailItem.usage_count }}</span>
+                            <span class="text-xs text-muted-foreground"
+                                >Usage</span
+                            >
+                            <span class="text-xs text-muted-foreground">{{
+                                detailItem.usage_count
+                            }}</span>
                         </div>
-                        <div v-if="detailItem.usage_count === 0" class="rounded border border-dashed px-2 py-2 text-xs text-muted-foreground">
+                        <div
+                            v-if="detailItem.usage_count === 0"
+                            class="rounded border border-dashed px-2 py-2 text-xs text-muted-foreground"
+                        >
                             No known CMS references.
                         </div>
                         <div v-else class="space-y-2">
@@ -713,28 +972,45 @@ function isPdf(item: MediaItem | null): item is MediaItem {
                                 class="block rounded border px-2 py-2 text-xs transition-colors hover:bg-accent"
                             >
                                 <p class="font-medium">{{ reference.label }}</p>
-                                <p class="text-muted-foreground">{{ reference.context }}</p>
+                                <p class="text-muted-foreground">
+                                    {{ reference.context }}
+                                </p>
                             </a>
                         </div>
                     </div>
 
-                    <div v-if="detailItem.kind === 'image'" class="flex flex-col gap-1">
-                        <span class="text-xs text-muted-foreground">Alt text</span>
+                    <div
+                        v-if="detailItem.kind === 'image'"
+                        class="flex flex-col gap-1"
+                    >
+                        <span class="text-xs text-muted-foreground"
+                            >Alt text</span
+                        >
                         <template v-if="editingAlt?.id === detailItem.id">
                             <textarea
                                 v-model="editingAlt.value"
                                 rows="2"
                                 placeholder="Describe this image…"
-                                class="w-full resize-none rounded border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                                class="w-full resize-none rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-ring focus:outline-none"
                                 @keydown.enter.prevent="saveAlt"
                                 @keydown.esc="editingAlt = null"
                             />
-                            <button class="rounded bg-primary px-2 py-1 text-xs text-primary-foreground" @click="saveAlt">Save</button>
+                            <button
+                                class="rounded bg-primary px-2 py-1 text-xs text-primary-foreground"
+                                @click="saveAlt"
+                            >
+                                Save
+                            </button>
                         </template>
                         <button
                             v-else
                             class="rounded border px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-accent"
-                            @click="editingAlt = { id: detailItem.id, value: detailItem.alt }"
+                            @click="
+                                editingAlt = {
+                                    id: detailItem.id,
+                                    value: detailItem.alt,
+                                }
+                            "
                         >
                             {{ detailItem.alt || '+ Add alt text' }}
                         </button>
@@ -748,11 +1024,22 @@ function isPdf(item: MediaItem | null): item is MediaItem {
                                 readonly
                                 class="min-w-0 flex-1 rounded border bg-muted/30 px-2 py-1 text-xs text-muted-foreground"
                             />
-                            <button class="rounded border px-2 py-1 text-xs hover:bg-accent" title="Copy URL" @click="copyUrl(detailItem.url)">Copy</button>
+                            <button
+                                class="rounded border px-2 py-1 text-xs hover:bg-accent"
+                                title="Copy URL"
+                                @click="copyUrl(detailItem.url)"
+                            >
+                                Copy
+                            </button>
                         </div>
                     </div>
 
-                    <Button variant="destructive" size="sm" class="w-full" @click="deleteMedia(detailItem)">
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        class="w-full"
+                        @click="deleteMedia(detailItem)"
+                    >
                         <Trash2 class="mr-2 h-3.5 w-3.5" />
                         Delete
                     </Button>

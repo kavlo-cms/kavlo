@@ -13,7 +13,7 @@ class Menu extends Model
     {
         // Only get top-level items; children will be nested inside
         return $this->hasMany(MenuItem::class)
-                    ->whereNull('parent_id')
-                    ->orderBy('order');
+            ->whereNull('parent_id')
+            ->orderBy('order');
     }
 }

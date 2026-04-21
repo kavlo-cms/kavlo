@@ -3,7 +3,15 @@ import { Link } from '@inertiajs/vue3';
 import { router } from '@inertiajs/vue3';
 import { ArrowLeft, Download, Trash2 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableEmpty, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableEmpty,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import AppLayout from '@/layouts/AppLayout.vue';
 import admin from '@/routes/admin';
 import type { BreadcrumbItem } from '@/types';
@@ -51,14 +59,30 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Submissions', href: '#' },
 ];
 
-const sortedFields = [...(props.form.fields ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+const sortedFields = [...(props.form.fields ?? [])].sort(
+    (a, b) => a.sort_order - b.sort_order,
+);
 
 function deleteSubmission(sub: Submission) {
     if (!confirm('Delete this submission? This cannot be undone.')) {
-return;
+        return;
+    }
+
+    router.delete(
+        admin.forms.submissions.destroy.url({
+            form: props.form.id,
+            submission: sub.id,
+        }),
+        { preserveScroll: true },
+    );
 }
 
-    router.delete(admin.forms.submissions.destroy.url(props.form.id, sub.id), { preserveScroll: true });
+function displaySubmissionValue(value: unknown): string {
+    if (Array.isArray(value)) {
+        return value.map((entry) => String(entry)).join(', ');
+    }
+
+    return value == null ? '—' : String(value);
 }
 </script>
 
@@ -72,8 +96,12 @@ return;
                     </Link>
                 </Button>
                 <div>
-                    <h1 class="text-2xl font-semibold tracking-tight">{{ form.name }} — Submissions</h1>
-                    <p class="text-sm text-muted-foreground">{{ submissions.total }} total</p>
+                    <h1 class="text-2xl font-semibold tracking-tight">
+                        {{ form.name }} — Submissions
+                    </h1>
+                    <p class="text-sm text-muted-foreground">
+                        {{ submissions.total }} total
+                    </p>
                 </div>
             </div>
             <Button variant="outline" as-child>
@@ -95,18 +123,32 @@ return;
                 </TableRow>
             </TableHeader>
             <TableBody>
-                <TableEmpty v-if="!submissions.data.length" :colspan="sortedFields.length + 2">
+                <TableEmpty
+                    v-if="!submissions.data.length"
+                    :colspan="sortedFields.length + 2"
+                >
                     No submissions yet.
                 </TableEmpty>
                 <TableRow v-for="sub in submissions.data" :key="sub.id">
-                    <TableCell class="whitespace-nowrap text-sm text-muted-foreground">
+                    <TableCell
+                        class="text-sm whitespace-nowrap text-muted-foreground"
+                    >
                         {{ new Date(sub.created_at).toLocaleString() }}
                     </TableCell>
-                    <TableCell v-for="field in sortedFields" :key="field.id" class="max-w-xs truncate">
-                        {{ Array.isArray(sub.data[field.key]) ? sub.data[field.key].join(', ') : (sub.data[field.key] ?? '—') }}
+                    <TableCell
+                        v-for="field in sortedFields"
+                        :key="field.id"
+                        class="max-w-xs truncate"
+                    >
+                        {{ displaySubmissionValue(sub.data[field.key]) }}
                     </TableCell>
                     <TableCell>
-                        <Button variant="ghost" size="icon" class="text-destructive hover:text-destructive" @click="deleteSubmission(sub)">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            class="text-destructive hover:text-destructive"
+                            @click="deleteSubmission(sub)"
+                        >
                             <Trash2 class="h-4 w-4" />
                         </Button>
                     </TableCell>
@@ -115,8 +157,14 @@ return;
         </Table>
 
         <!-- Pagination -->
-        <div v-if="submissions.last_page > 1" class="flex items-center justify-between text-sm text-muted-foreground">
-            <span>Showing {{ submissions.from }}–{{ submissions.to }} of {{ submissions.total }}</span>
+        <div
+            v-if="submissions.last_page > 1"
+            class="flex items-center justify-between text-sm text-muted-foreground"
+        >
+            <span
+                >Showing {{ submissions.from }}–{{ submissions.to }} of
+                {{ submissions.total }}</span
+            >
             <div class="flex gap-2">
                 <Button
                     variant="outline"

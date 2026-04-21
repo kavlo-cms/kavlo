@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import InlineEdit from '@/admin/Pages/partials/InlineEdit.vue';
 
-const props = defineProps<{ data: Record<string, unknown> }>();
+defineProps<{ data: Record<string, unknown> }>();
 const emit = defineEmits<{ 'update:data': [Record<string, unknown>] }>();
 </script>
 

@@ -5,6 +5,12 @@ import { createApp, h } from 'vue';
 import '../css/app.css';
 import { router } from '@inertiajs/vue3';
 
+declare global {
+    interface Window {
+        gtag?: (...args: unknown[]) => void;
+    }
+}
+
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
@@ -25,7 +31,7 @@ createInertiaApp({
 });
 
 router.on('navigate', (event) => {
-    if (import.meta.env.PROD) {
+    if (import.meta.env.PROD && typeof window.gtag === 'function') {
         window.gtag('config', 'G-VX7GKCQ6FP', {
             page_path: event.detail.page.url,
             page_location: window.location.href,

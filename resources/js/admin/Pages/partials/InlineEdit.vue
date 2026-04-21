@@ -54,7 +54,7 @@ function onInput(e: Event) {
         ref="el"
         contenteditable="true"
         :data-placeholder="placeholder"
-        class="cursor-text outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-white/30"
+        class="cursor-text outline-none empty:before:text-white/30 empty:before:content-[attr(data-placeholder)]"
         @focus="onFocus"
         @blur="onBlur"
         @keydown="onKeydown"

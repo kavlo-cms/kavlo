@@ -105,7 +105,7 @@ watch(
         }
 
         syncingVisual.value = true;
-        editor.value.commands.setContent(html, false);
+        editor.value.commands.setContent(html, { emitUpdate: false });
         visualBaseline.value = editor.value.getHTML();
         syncingVisual.value = false;
     },
@@ -132,7 +132,9 @@ watch(editorMode, (mode) => {
     }
 
     syncingVisual.value = true;
-    editor.value.commands.setContent(currentContent.value, false);
+    editor.value.commands.setContent(currentContent.value, {
+        emitUpdate: false,
+    });
     visualBaseline.value = editor.value.getHTML();
     syncingVisual.value = false;
 });
@@ -191,7 +193,9 @@ async function copySnippet(value: string) {
 </script>
 
 <template>
-    <div class="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-muted/20">
+    <div
+        class="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-muted/20"
+    >
         <div class="border-b bg-background px-6 py-4">
             <h2 class="text-sm font-medium">Content editor</h2>
             <p class="text-xs text-muted-foreground">
@@ -201,7 +205,9 @@ async function copySnippet(value: string) {
         </div>
 
         <div class="min-h-0 flex-1 overflow-hidden p-6">
-            <div class="grid h-full min-h-0 gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+            <div
+                class="grid h-full min-h-0 gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]"
+            >
                 <Tabs
                     v-model="editorMode"
                     class="flex h-full min-h-0 flex-col gap-4"

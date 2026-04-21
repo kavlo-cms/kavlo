@@ -4,7 +4,15 @@ import { Link } from '@inertiajs/vue3';
 import { LayoutList, Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableEmpty, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableEmpty,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
 
@@ -18,7 +26,9 @@ interface Menu {
 
 defineProps<{ menus: Menu[] }>();
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Menus', href: '/admin/menus' }];
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Menus', href: '/admin/menus' },
+];
 
 function deleteMenu(menu: Menu) {
     if (!confirm(`Delete "${menu.name}"? This cannot be undone.`)) return;
@@ -50,7 +60,9 @@ function deleteMenu(menu: Menu) {
                 </TableHeader>
                 <TableBody>
                     <TableEmpty v-if="menus.length === 0" :colspan="4">
-                        <LayoutList class="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
+                        <LayoutList
+                            class="mx-auto mb-2 h-8 w-8 text-muted-foreground/40"
+                        />
                         No menus yet. Create one to get started.
                     </TableEmpty>
                     <TableRow v-for="menu in menus" :key="menu.id">
@@ -62,14 +74,27 @@ function deleteMenu(menu: Menu) {
                                 {{ menu.name }}
                             </Link>
                         </TableCell>
-                        <TableCell class="font-mono text-sm text-muted-foreground">{{ menu.slug }}</TableCell>
+                        <TableCell
+                            class="font-mono text-sm text-muted-foreground"
+                            >{{ menu.slug }}</TableCell
+                        >
                         <TableCell>
-                            <Badge variant="secondary">{{ menu.items_count }}</Badge>
+                            <Badge variant="secondary">{{
+                                menu.items_count
+                            }}</Badge>
                         </TableCell>
                         <TableCell>
                             <div class="flex items-center justify-end gap-1">
-                                <Button variant="ghost" size="icon" class="h-8 w-8" as-child title="Edit">
-                                    <Link :href="`/admin/menus/${menu.id}/edit`">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    class="h-8 w-8"
+                                    as-child
+                                    title="Edit"
+                                >
+                                    <Link
+                                        :href="`/admin/menus/${menu.id}/edit`"
+                                    >
                                         <Pencil class="h-4 w-4" />
                                     </Link>
                                 </Button>

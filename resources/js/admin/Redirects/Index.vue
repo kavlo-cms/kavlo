@@ -1,12 +1,29 @@
 <script setup lang="ts">
 import { useForm, router } from '@inertiajs/vue3';
-import { ArrowRight, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-vue-next';
+import {
+    ArrowRight,
+    Pencil,
+    Trash2,
+    ToggleLeft,
+    ToggleRight,
+} from 'lucide-vue-next';
 import { ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import UrlField, { type PageOption } from '@/components/UrlField.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import admin from '@/routes/admin';
@@ -34,9 +51,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 // ── Create form ──────────────────────────────────────────────────────────────
 const createForm = useForm({
-    from_url:  '',
-    to_url:    '',
-    type:      '301',
+    from_url: '',
+    to_url: '',
+    type: '301',
     is_active: true,
 });
 
@@ -47,43 +64,51 @@ function submitCreate() {
 }
 
 // ── Edit dialog ──────────────────────────────────────────────────────────────
-const editOpen   = ref(false);
+const editOpen = ref(false);
 const editTarget = ref<Redirect | null>(null);
 // key to force UrlField to remount (reset internal type state) when opening a different redirect
-const editKey    = ref(0);
+const editKey = ref(0);
 
 const editForm = useForm({
-    from_url:  '',
-    to_url:    '',
-    type:      '301',
+    from_url: '',
+    to_url: '',
+    type: '301',
     is_active: true,
 });
 
 function openEdit(redirect: Redirect) {
-    editTarget.value   = redirect;
-    editForm.from_url  = redirect.from_url;
-    editForm.to_url    = redirect.to_url;
-    editForm.type      = String(redirect.type);
+    editTarget.value = redirect;
+    editForm.from_url = redirect.from_url;
+    editForm.to_url = redirect.to_url;
+    editForm.type = String(redirect.type);
     editForm.is_active = redirect.is_active;
     editKey.value++;
     editOpen.value = true;
 }
 
 function submitEdit() {
-    if (!editTarget.value) return;
-    editForm.put(admin.redirects.update(editTarget.value.id).url(), {
-        onSuccess: () => { editOpen.value = false; },
-    });
+    if (!editTarget.value) {
+        return;
+    }
+
+    editForm.put(
+        admin.redirects.update.url({ redirect: editTarget.value.id }),
+        {
+            onSuccess: () => {
+                editOpen.value = false;
+            },
+        },
+    );
 }
 
 // ── Actions ──────────────────────────────────────────────────────────────────
 function toggle(redirect: Redirect) {
-    router.patch(admin.redirects.toggle(redirect.id).url());
+    router.patch(admin.redirects.toggle.url({ redirect: redirect.id }));
 }
 
 function destroy(redirect: Redirect) {
     if (!confirm(`Delete redirect from "${redirect.from_url}"?`)) return;
-    router.delete(admin.redirects.destroy(redirect.id).url());
+    router.delete(admin.redirects.destroy.url({ redirect: redirect.id }));
 }
 </script>
 
@@ -94,9 +119,14 @@ function destroy(redirect: Redirect) {
         </div>
 
         <!-- Create form -->
-        <form @submit.prevent="submitCreate" class="rounded-lg border bg-card p-5 space-y-4">
+        <form
+            @submit.prevent="submitCreate"
+            class="space-y-4 rounded-lg border bg-card p-5"
+        >
             <p class="text-sm font-medium">Add Redirect</p>
-            <div class="grid gap-4 sm:grid-cols-[1fr_auto_1fr_auto_auto] items-end">
+            <div
+                class="grid items-end gap-4 sm:grid-cols-[1fr_auto_1fr_auto_auto]"
+            >
                 <!-- From -->
                 <div class="flex flex-col gap-1.5">
                     <Label>From</Label>
@@ -109,7 +139,9 @@ function destroy(redirect: Redirect) {
                     />
                 </div>
 
-                <ArrowRight class="h-4 w-4 text-muted-foreground mb-1 shrink-0 self-end" />
+                <ArrowRight
+                    class="mb-1 h-4 w-4 shrink-0 self-end text-muted-foreground"
+                />
 
                 <!-- To -->
                 <div class="flex flex-col gap-1.5">
@@ -124,7 +156,7 @@ function destroy(redirect: Redirect) {
                 </div>
 
                 <!-- Type -->
-                <div class="flex flex-col gap-1.5 w-32 shrink-0">
+                <div class="flex w-32 shrink-0 flex-col gap-1.5">
                     <Label>Type</Label>
                     <Select v-model="createForm.type">
                         <SelectTrigger>
@@ -137,64 +169,114 @@ function destroy(redirect: Redirect) {
                     </Select>
                 </div>
 
-                <Button type="submit" :disabled="createForm.processing" class="self-end shrink-0">
+                <Button
+                    type="submit"
+                    :disabled="createForm.processing"
+                    class="shrink-0 self-end"
+                >
                     Add
                 </Button>
             </div>
         </form>
 
         <!-- Empty state -->
-        <div v-if="redirects.length === 0" class="flex min-h-40 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
+        <div
+            v-if="redirects.length === 0"
+            class="flex min-h-40 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground"
+        >
             No redirects yet.
         </div>
 
         <!-- Table -->
-        <div v-else class="rounded-lg border overflow-hidden">
+        <div v-else class="overflow-hidden rounded-lg border">
             <table class="w-full text-sm">
-                <thead class="bg-muted/50 text-xs text-muted-foreground uppercase tracking-wide">
+                <thead
+                    class="bg-muted/50 text-xs tracking-wide text-muted-foreground uppercase"
+                >
                     <tr>
                         <th class="px-4 py-2.5 text-left font-medium">From</th>
                         <th class="px-4 py-2.5 text-left font-medium">To</th>
-                        <th class="px-4 py-2.5 text-left font-medium w-24">Type</th>
-                        <th class="px-4 py-2.5 text-left font-medium w-16">Hits</th>
-                        <th class="px-4 py-2.5 text-left font-medium w-20">Status</th>
-                        <th class="px-4 py-2.5 w-24"></th>
+                        <th class="w-24 px-4 py-2.5 text-left font-medium">
+                            Type
+                        </th>
+                        <th class="w-16 px-4 py-2.5 text-left font-medium">
+                            Hits
+                        </th>
+                        <th class="w-20 px-4 py-2.5 text-left font-medium">
+                            Status
+                        </th>
+                        <th class="w-24 px-4 py-2.5"></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y">
-                    <tr v-for="redirect in redirects" :key="redirect.id" class="hover:bg-muted/30 transition-colors">
-                        <td class="px-4 py-2.5 font-mono text-xs">{{ redirect.from_url }}</td>
-                        <td class="px-4 py-2.5 font-mono text-xs text-muted-foreground truncate max-w-xs">
+                    <tr
+                        v-for="redirect in redirects"
+                        :key="redirect.id"
+                        class="transition-colors hover:bg-muted/30"
+                    >
+                        <td class="px-4 py-2.5 font-mono text-xs">
+                            {{ redirect.from_url }}
+                        </td>
+                        <td
+                            class="max-w-xs truncate px-4 py-2.5 font-mono text-xs text-muted-foreground"
+                        >
                             {{ redirect.to_url }}
                         </td>
                         <td class="px-4 py-2.5">
-                            <Badge variant="outline" class="text-xs">{{ redirect.type }}</Badge>
+                            <Badge variant="outline" class="text-xs">{{
+                                redirect.type
+                            }}</Badge>
                         </td>
-                        <td class="px-4 py-2.5 tabular-nums text-muted-foreground">{{ redirect.hits }}</td>
+                        <td
+                            class="px-4 py-2.5 text-muted-foreground tabular-nums"
+                        >
+                            {{ redirect.hits }}
+                        </td>
                         <td class="px-4 py-2.5">
-                            <Badge :variant="redirect.is_active ? 'default' : 'secondary'" class="text-xs">
+                            <Badge
+                                :variant="
+                                    redirect.is_active ? 'default' : 'secondary'
+                                "
+                                class="text-xs"
+                            >
                                 {{ redirect.is_active ? 'Active' : 'Off' }}
                             </Badge>
                         </td>
                         <td class="px-4 py-2.5">
                             <div class="flex items-center justify-end gap-0.5">
                                 <Button
-                                    variant="ghost" size="icon" class="h-7 w-7"
-                                    :title="redirect.is_active ? 'Disable' : 'Enable'"
+                                    variant="ghost"
+                                    size="icon"
+                                    class="h-7 w-7"
+                                    :title="
+                                        redirect.is_active
+                                            ? 'Disable'
+                                            : 'Enable'
+                                    "
                                     @click="toggle(redirect)"
                                 >
-                                    <ToggleRight v-if="redirect.is_active" class="h-4 w-4 text-primary" />
-                                    <ToggleLeft v-else class="h-4 w-4 text-muted-foreground" />
+                                    <ToggleRight
+                                        v-if="redirect.is_active"
+                                        class="h-4 w-4 text-primary"
+                                    />
+                                    <ToggleLeft
+                                        v-else
+                                        class="h-4 w-4 text-muted-foreground"
+                                    />
                                 </Button>
                                 <Button
-                                    variant="ghost" size="icon" class="h-7 w-7"
+                                    variant="ghost"
+                                    size="icon"
+                                    class="h-7 w-7"
                                     title="Edit"
                                     @click="openEdit(redirect)"
                                 >
                                     <Pencil class="h-3.5 w-3.5" />
                                 </Button>
                                 <Button
-                                    variant="ghost" size="icon" class="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                    variant="ghost"
+                                    size="icon"
+                                    class="h-7 w-7 text-muted-foreground hover:text-destructive"
                                     title="Delete"
                                     @click="destroy(redirect)"
                                 >
@@ -213,7 +295,11 @@ function destroy(redirect: Redirect) {
                 <DialogHeader>
                     <DialogTitle>Edit Redirect</DialogTitle>
                 </DialogHeader>
-                <form :key="editKey" @submit.prevent="submitEdit" class="space-y-4 pt-2">
+                <form
+                    :key="editKey"
+                    @submit.prevent="submitEdit"
+                    class="space-y-4 pt-2"
+                >
                     <div class="space-y-1.5">
                         <Label>From</Label>
                         <UrlField
@@ -239,14 +325,25 @@ function destroy(redirect: Redirect) {
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="301">301 Permanent</SelectItem>
-                                <SelectItem value="302">302 Temporary</SelectItem>
+                                <SelectItem value="301"
+                                    >301 Permanent</SelectItem
+                                >
+                                <SelectItem value="302"
+                                    >302 Temporary</SelectItem
+                                >
                             </SelectContent>
                         </Select>
                     </div>
                     <div class="flex justify-end gap-2 pt-2">
-                        <Button type="button" variant="outline" @click="editOpen = false">Cancel</Button>
-                        <Button type="submit" :disabled="editForm.processing">Save Changes</Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            @click="editOpen = false"
+                            >Cancel</Button
+                        >
+                        <Button type="submit" :disabled="editForm.processing"
+                            >Save Changes</Button
+                        >
                     </div>
                 </form>
             </DialogContent>

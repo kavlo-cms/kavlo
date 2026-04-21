@@ -65,7 +65,7 @@ class EmbeddableFormRegistry
             $label = $option['label'];
 
             if (($option['source'] ?? 'forms') !== 'forms') {
-                $label .= ' (' . ucfirst((string) $option['source']) . ')';
+                $label .= ' ('.ucfirst((string) $option['source']).')';
             }
 
             return [
@@ -101,7 +101,7 @@ class EmbeddableFormRegistry
         }, $blocks);
     }
 
-    public static function resolve(string $reference): array|null
+    public static function resolve(string $reference): ?array
     {
         $reference = trim($reference);
 
@@ -135,7 +135,7 @@ class EmbeddableFormRegistry
         return null;
     }
 
-    public static function renderRegistered(array $form, array $blockData = []): string|null
+    public static function renderRegistered(array $form, array $blockData = []): ?string
     {
         if (($form['type'] ?? null) !== 'registered') {
             return null;

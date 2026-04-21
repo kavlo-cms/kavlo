@@ -2,7 +2,8 @@
 interface Attributes {
     form_slug: string;
 }
-const props = defineProps<{ modelValue: Attributes }>();
+
+defineProps<{ modelValue: Attributes }>();
 const emit = defineEmits(['update:modelValue']);
 </script>
 

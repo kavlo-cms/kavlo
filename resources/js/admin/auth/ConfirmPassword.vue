@@ -20,11 +20,20 @@ function submit() {
 <template>
     <Head title="Confirm password" />
 
-    <AuthLayout title="Confirm your password" description="Re-enter your password to continue.">
+    <AuthLayout
+        title="Confirm your password"
+        description="Re-enter your password to continue."
+    >
         <form class="space-y-4" @submit.prevent="submit">
             <div class="space-y-2">
                 <Label for="password">Password</Label>
-                <Input id="password" v-model="form.password" type="password" autocomplete="current-password" autofocus />
+                <Input
+                    id="password"
+                    v-model="form.password"
+                    type="password"
+                    autocomplete="current-password"
+                    autofocus
+                />
                 <InputError :message="form.errors.password" />
             </div>
 

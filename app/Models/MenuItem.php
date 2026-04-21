@@ -28,6 +28,7 @@ class MenuItem extends Model
     public function isActive(): bool
     {
         $targetUrl = $this->page_id ? url($this->page->slug) : $this->url;
+
         return request()->url() === $targetUrl;
     }
 }

@@ -20,7 +20,7 @@ class RedirectsController extends Controller
 
         return Inertia::render('Redirects/Index', [
             'redirects' => $redirects,
-            'pages'     => $pages,
+            'pages' => $pages,
         ]);
     }
 
@@ -28,8 +28,8 @@ class RedirectsController extends Controller
     {
         $validated = $request->validate([
             'from_url' => ['required', 'string', 'max:2048', 'unique:redirects,from_url'],
-            'to_url'   => ['required', 'string', 'max:2048'],
-            'type'     => ['required', 'in:301,302'],
+            'to_url' => ['required', 'string', 'max:2048'],
+            'type' => ['required', 'in:301,302'],
             'is_active' => ['boolean'],
         ]);
 
@@ -43,9 +43,9 @@ class RedirectsController extends Controller
     public function update(Request $request, Redirect $redirect): RedirectResponse
     {
         $validated = $request->validate([
-            'from_url'  => ['required', 'string', 'max:2048', 'unique:redirects,from_url,' . $redirect->id],
-            'to_url'    => ['required', 'string', 'max:2048'],
-            'type'      => ['required', 'in:301,302'],
+            'from_url' => ['required', 'string', 'max:2048', 'unique:redirects,from_url,'.$redirect->id],
+            'to_url' => ['required', 'string', 'max:2048'],
+            'type' => ['required', 'in:301,302'],
             'is_active' => ['boolean'],
         ]);
 

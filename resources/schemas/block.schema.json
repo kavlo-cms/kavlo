@@ -58,7 +58,16 @@
                     },
                     "type": {
                         "type": "string",
-                        "enum": ["text", "textarea", "url", "select", "toggle", "number", "media", "page-link"]
+                        "enum": [
+                            "text",
+                            "textarea",
+                            "url",
+                            "select",
+                            "toggle",
+                            "number",
+                            "media",
+                            "page-link"
+                        ]
                     },
                     "placeholder": {
                         "type": "string"
