@@ -7,6 +7,17 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import admin from '@/routes/admin';
 import type { BreadcrumbItem } from '@/types';
 
+interface PublicPageCacheStatus {
+    enabled: boolean;
+    ttl_seconds: number;
+    last_flushed_at: string | null;
+    cache_scope: string;
+}
+
+const props = defineProps<{
+    publicPageCache: PublicPageCacheStatus;
+}>();
+
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Cache', href: admin.cache.index.url() },
 ];
@@ -36,13 +47,19 @@ const caches = [
         title: 'Config Cache',
         description: 'Clears the cached configuration. Required after changing .env or config files.',
     },
+    {
+        type: 'page_html',
+        icon: Zap,
+        title: 'Public Page Cache',
+        description: 'Clears cached frontend HTML for anonymous page requests so the next visit renders fresh output.',
+    },
 ];
 
 function makeForm(type: string) {
     return useForm({ type });
 }
 
-const forms = Object.fromEntries(caches.map((c) => [c.type, makeForm(c.type)]));
+const forms = Object.fromEntries(caches.map((c) => [c.type, makeForm(c.type)])) as Record<string, ReturnType<typeof useForm>>;
 
 function clearCache(type: string) {
     forms[type].post(admin.cache.clear.url());
@@ -89,5 +106,26 @@ function clearAll() {
                 </CardContent>
             </Card>
         </div>
+
+        <Card>
+            <CardHeader class="pb-3">
+                <CardTitle class="text-base">Public page cache status</CardTitle>
+                <CardDescription>{{ props.publicPageCache.cache_scope }}</CardDescription>
+            </CardHeader>
+            <CardContent class="grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
+                <div>
+                    <div class="font-medium text-foreground">Enabled</div>
+                    <div>{{ props.publicPageCache.enabled ? 'Yes' : 'No' }}</div>
+                </div>
+                <div>
+                    <div class="font-medium text-foreground">TTL</div>
+                    <div>{{ props.publicPageCache.ttl_seconds }} seconds</div>
+                </div>
+                <div>
+                    <div class="font-medium text-foreground">Last cleared</div>
+                    <div>{{ props.publicPageCache.last_flushed_at ?? 'Not yet cleared' }}</div>
+                </div>
+            </CardContent>
+        </Card>
     </AppLayout>
 </template>

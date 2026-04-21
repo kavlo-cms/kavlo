@@ -7,10 +7,7 @@
         @for($i = 0; $i < $count; $i++)
         <div class="min-w-0 flex-1">
             @foreach(($data['col_'.$i] ?? []) as $child)
-                @includeFirst(
-                    ["theme::blocks.{$child['type']}.render", "blocks::{$child['type']}.render"],
-                    ['data' => $child['data'] ?? []]
-                )
+                {!! kavlo_render_block(is_array($child) ? $child : []) !!}
             @endforeach
         </div>
         @endfor

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { ArrowRightLeft, Clock, FileText, Globe, Image, Navigation, Users } from 'lucide-vue-next';
+import { AlertTriangle, ArrowRightLeft, CheckCircle2, Clock, FileText, HardDrive, Image, Mail, Users } from 'lucide-vue-next';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
@@ -24,19 +25,77 @@ interface Revision {
     user: { id: number; name: string } | null;
 }
 
+interface HealthCheck {
+    key: string;
+    label: string;
+    status: 'ok' | 'warning' | 'fail';
+    message: string;
+    meta: Record<string, unknown>;
+}
+
+interface SystemHealth {
+    status: 'ok' | 'warning' | 'fail';
+    checked_at: string;
+    summary: {
+        ok: number;
+        warning: number;
+        fail: number;
+    };
+    checks: HealthCheck[];
+}
+
 const props = defineProps<{
     stats: Stats;
     recentRevisions: Revision[];
+    systemHealth: SystemHealth;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/admin' }];
 
 function timeAgo(dateStr: string): string {
     const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-    if (diff < 60) return `${diff}s ago`;
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+
+    if (diff < 60) {
+return `${diff}s ago`;
+}
+
+    if (diff < 3600) {
+return `${Math.floor(diff / 60)}m ago`;
+}
+
+    if (diff < 86400) {
+return `${Math.floor(diff / 3600)}h ago`;
+}
+
     return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function healthVariant(status: HealthCheck['status'] | SystemHealth['status']) {
+    if (status === 'fail') {
+return 'destructive';
+}
+
+    if (status === 'warning') {
+return 'outline';
+}
+
+    return 'default';
+}
+
+function healthIcon(check: HealthCheck) {
+    if (check.key === 'storage') {
+return HardDrive;
+}
+
+    if (check.key === 'mail') {
+return Mail;
+}
+
+    if (check.status === 'ok') {
+return CheckCircle2;
+}
+
+    return AlertTriangle;
 }
 </script>
 
@@ -92,6 +151,63 @@ function timeAgo(dateStr: string): string {
                 </CardContent>
             </Card>
         </div>
+
+        <Card>
+            <CardHeader class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <CardTitle class="text-base font-semibold">System Health</CardTitle>
+                    <p class="text-sm text-muted-foreground">
+                        Checked {{ timeAgo(props.systemHealth.checked_at) }}
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <Badge :variant="healthVariant(props.systemHealth.status)" class="capitalize">
+                        {{ props.systemHealth.status }}
+                    </Badge>
+                    <Badge variant="outline">{{ props.systemHealth.summary.ok }} healthy</Badge>
+                    <Badge variant="outline">{{ props.systemHealth.summary.warning }} warnings</Badge>
+                    <Badge variant="outline">{{ props.systemHealth.summary.fail }} failures</Badge>
+                </div>
+            </CardHeader>
+
+            <CardContent class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <div
+                    v-for="check in props.systemHealth.checks"
+                    :key="check.key"
+                    class="rounded-lg border p-4"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <component :is="healthIcon(check)" class="h-4 w-4 text-muted-foreground" />
+                            <h3 class="font-medium">{{ check.label }}</h3>
+                        </div>
+
+                        <Badge :variant="healthVariant(check.status)" class="capitalize">
+                            {{ check.status }}
+                        </Badge>
+                    </div>
+
+                    <p class="mt-3 text-sm text-muted-foreground">
+                        {{ check.message }}
+                    </p>
+
+                    <dl
+                        v-if="Object.keys(check.meta ?? {}).length > 0"
+                        class="mt-3 space-y-1 text-xs text-muted-foreground"
+                    >
+                        <div
+                            v-for="(value, key) in check.meta"
+                            :key="key"
+                            class="flex gap-2"
+                        >
+                            <dt class="font-medium capitalize">{{ String(key).replaceAll('_', ' ') }}:</dt>
+                            <dd class="break-all">{{ value }}</dd>
+                        </div>
+                    </dl>
+                </div>
+            </CardContent>
+        </Card>
 
         <!-- Recent activity -->
         <Card>

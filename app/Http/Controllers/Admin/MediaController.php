@@ -2,16 +2,26 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\Library;
+use App\Services\KavloStorage;
+use App\Services\MediaUsageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Inertia\Response;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaController extends Controller
 {
-    public function index(): \Inertia\Response
+    public function __construct(
+        protected MediaUsageService $usage,
+        protected KavloStorage $storage,
+    ) {}
+
+    public function index(): Response
     {
         return Inertia::render('Media/Index', [
             'folders' => $this->getFolders(),
@@ -31,7 +41,7 @@ class MediaController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('file_name', 'like', "%{$search}%");
+                    ->orWhere('file_name', 'like', "%{$search}%");
             });
         }
 
@@ -54,7 +64,16 @@ class MediaController extends Controller
     public function upload(Request $request): JsonResponse
     {
         $request->validate([
-            'file'   => 'required|file|max:20480|mimes:jpeg,jpg,png,gif,webp,svg,pdf,mp4,mov',
+            'file' => [
+                'required',
+                'file',
+                'max:102400',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (! $value instanceof UploadedFile || ! $this->isAllowedUpload($value)) {
+                        $fail('The file field must be a supported media or document type.');
+                    }
+                },
+            ],
             'folder' => ['nullable', 'string', 'max:100', 'regex:/^[a-zA-Z0-9_\-\/]+$/'],
         ]);
 
@@ -66,7 +85,7 @@ class MediaController extends Controller
         $media = $library
             ->addMedia($request->file('file'))
             ->usingName($name)
-            ->toMediaCollection($folder, 'public');
+            ->toMediaCollection($folder, $this->storage->publicDiskName());
 
         return response()->json($this->formatMedia($media), 201);
     }
@@ -75,7 +94,8 @@ class MediaController extends Controller
     {
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
-            'alt'  => 'nullable|string|max:500',
+            'alt' => 'nullable|string|max:500',
+            'folder' => ['nullable', 'string', 'max:100', 'regex:/^[a-zA-Z0-9_\-\/]+$/'],
         ]);
 
         if (! empty($validated['name'])) {
@@ -86,6 +106,10 @@ class MediaController extends Controller
             $media->setCustomProperty('alt', $validated['alt'] ?? '');
         }
 
+        if (! empty($validated['folder'])) {
+            $media->collection_name = $validated['folder'];
+        }
+
         $media->save();
 
         return response()->json($this->formatMedia($media));
@@ -93,6 +117,15 @@ class MediaController extends Controller
 
     public function destroy(Media $media): JsonResponse
     {
+        $usage = $this->usage->forMedia($media);
+
+        if ($usage['count'] > 0 && ! request()->boolean('force')) {
+            return response()->json([
+                'message' => 'This file is still referenced in the CMS.',
+                'usage' => $usage,
+            ], 422);
+        }
+
         $media->delete();
 
         return response()->json(['deleted' => true]);
@@ -134,16 +167,154 @@ class MediaController extends Controller
 
     private function formatMedia(Media $media): array
     {
+        $usage = $this->usage->forMedia($media);
+        $extension = strtolower(pathinfo($media->file_name, PATHINFO_EXTENSION));
+        $kind = $this->mediaKind($media->mime_type ?? '', $extension);
+
         return [
-            'id'         => $media->id,
-            'name'       => $media->name,
-            'file_name'  => $media->file_name,
-            'mime_type'  => $media->mime_type,
-            'size'       => $media->size,
-            'url'        => $media->getUrl(),
-            'folder'     => $media->collection_name,
-            'alt'        => $media->getCustomProperty('alt', ''),
+            'id' => $media->id,
+            'name' => $media->name,
+            'file_name' => $media->file_name,
+            'mime_type' => $media->mime_type,
+            'extension' => $extension,
+            'kind' => $kind,
+            'size' => $media->size,
+            'url' => $media->getUrl(),
+            'download_url' => $media->getFullUrl(),
+            'folder' => $media->collection_name,
+            'alt' => $media->getCustomProperty('alt', ''),
             'created_at' => $media->created_at?->toISOString(),
+            'usage_count' => $usage['count'],
+            'usage' => $usage['references'],
         ];
+    }
+
+    private function allowedExtensions(): array
+    {
+        return [
+            'jpg',
+            'jpeg',
+            'png',
+            'gif',
+            'webp',
+            'svg',
+            'avif',
+            'mp4',
+            'mov',
+            'webm',
+            'avi',
+            'mkv',
+            'mp3',
+            'm4a',
+            'wav',
+            'ogg',
+            'pdf',
+            'txt',
+            'csv',
+            'json',
+            'zip',
+            'doc',
+            'docx',
+            'xls',
+            'xlsx',
+            'ppt',
+            'pptx',
+        ];
+    }
+
+    private function allowedClientMimeTypes(): array
+    {
+        return [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'image/svg+xml',
+            'image/avif',
+            'video/mp4',
+            'video/quicktime',
+            'video/webm',
+            'video/x-msvideo',
+            'video/x-matroska',
+            'audio/mpeg',
+            'audio/mp4',
+            'audio/x-m4a',
+            'audio/wav',
+            'audio/x-wav',
+            'audio/ogg',
+            'audio/webm',
+            'application/pdf',
+            'text/plain',
+            'text/csv',
+            'application/json',
+            'application/zip',
+            'application/x-zip-compressed',
+            'application/octet-stream',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        ];
+    }
+
+    private function isAllowedUpload(UploadedFile $file): bool
+    {
+        $originalExtension = strtolower($file->getClientOriginalExtension());
+        $guessedExtension = strtolower($file->guessExtension() ?? '');
+        $clientMimeType = strtolower($file->getClientMimeType() ?? '');
+        $guessedMimeType = strtolower($file->getMimeType() ?? '');
+
+        if (in_array($originalExtension, $this->allowedExtensions(), true)) {
+            return true;
+        }
+
+        if ($guessedExtension !== '' && in_array($guessedExtension, $this->allowedExtensions(), true)) {
+            return true;
+        }
+
+        if (in_array($clientMimeType, $this->allowedClientMimeTypes(), true)) {
+            return true;
+        }
+
+        return $guessedMimeType !== '' && in_array($guessedMimeType, $this->allowedClientMimeTypes(), true);
+    }
+
+    private function mediaKind(string $mimeType, string $extension): string
+    {
+        if ($extension === 'pdf') {
+            return 'pdf';
+        }
+
+        if (in_array($extension, ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'json'], true)) {
+            return 'document';
+        }
+
+        if (in_array($extension, ['zip'], true)) {
+            return 'archive';
+        }
+
+        if (Str::startsWith($mimeType, 'image/')) {
+            return 'image';
+        }
+
+        if (Str::startsWith($mimeType, 'video/')) {
+            return 'video';
+        }
+
+        if (Str::startsWith($mimeType, 'audio/')) {
+            return 'audio';
+        }
+
+        if ($mimeType === 'application/pdf') {
+            return 'pdf';
+        }
+
+        if (Str::contains($mimeType, 'zip')) {
+            return 'archive';
+        }
+
+        return 'file';
     }
 }

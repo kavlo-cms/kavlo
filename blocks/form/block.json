@@ -1,1 +1,1 @@
-{"label":"Form","description":"Embed a saved form or a registered form provider","group":"components","icon":"ClipboardList","source":"core","fields":[{"key":"form_slug","label":"Form","type":"select","options":[{"label":"— Select a form —","value":""}]}]}
+{"$schema":"../../resources/schemas/block.schema.json","label":"Form","description":"Embed a saved form or a registered form provider","group":"components","icon":"ClipboardList","source":"core","fields":[{"key":"form_slug","label":"Form","type":"select","options":[{"label":"— Select a form —","value":""}]}]}

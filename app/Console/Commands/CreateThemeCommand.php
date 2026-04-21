@@ -2,13 +2,13 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Theme;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use App\Models\Theme;
 
 use function Laravel\Prompts\text;
 
@@ -29,12 +29,14 @@ class CreateThemeCommand extends Command implements PromptsForMissingInput
 
         // 3. Safety check: Ensure slug isn't empty (in case of weird input)
         if (empty($slug)) {
-            $this->error("Invalid theme name provided.");
+            $this->error('Invalid theme name provided.');
+
             return;
         }
 
         if (File::exists($path)) {
             $this->error("Theme '{$name}' already exists.");
+
             return;
         }
 
@@ -50,7 +52,7 @@ class CreateThemeCommand extends Command implements PromptsForMissingInput
             'private' => true,
             'type' => 'module',
             'main' => './assets/js/app.ts',
-            'dependencies' => new \stdClass(),
+            'dependencies' => new \stdClass,
         ];
 
         File::put(
@@ -59,6 +61,7 @@ class CreateThemeCommand extends Command implements PromptsForMissingInput
         );
 
         File::put("{$path}/theme.json", json_encode([
+            '$schema' => '../../resources/schemas/theme.schema.json',
             'name' => $name,
             'slug' => $slug,
         ], JSON_PRETTY_PRINT));
@@ -80,10 +83,10 @@ class CreateThemeCommand extends Command implements PromptsForMissingInput
     protected function promptForMissingArgumentsUsing(): array
     {
         return [
-            'name' => fn() => text(
+            'name' => fn () => text(
                 label: 'What is the name of your new theme?',
                 placeholder: 'E.g. Midnight Blue',
-                validate: fn(string $value) => match (true) {
+                validate: fn (string $value) => match (true) {
                     strlen($value) < 3 => 'The name must be at least 3 characters.',
                     default => null
                 }

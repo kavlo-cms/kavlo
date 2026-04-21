@@ -2,18 +2,23 @@
 
 namespace App\Providers;
 
-use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Date;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Validation\Rules\Password;
-use Illuminate\Support\Facades\View;
+use App\Models\ApiKey;
+use App\Models\Setting;
 use App\Services\ContentRouteRegistry;
 use App\Services\HookManager;
 use App\Services\MenuWalker;
 use App\Services\PluginManager;
 use App\Services\SitemapRegistry;
+use Carbon\CarbonImmutable;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,16 +28,16 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(HookManager::class);
+        $this->app->singleton(PluginManager::class);
 
         $this->app->singleton(MenuWalker::class, function ($app) {
-            return new MenuWalker();
+            return new MenuWalker;
         });
 
         $this->app->singleton(ContentRouteRegistry::class, function ($app) {
-            return new ContentRouteRegistry();
+            return new ContentRouteRegistry;
         });
 
-        (new PluginManager())->bootPlugins();
     }
 
     /**
@@ -40,8 +45,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(SitemapRegistry $registry): void
     {
+        app(PluginManager::class)->bootPlugins();
+
         // super-admin bypasses all Gate/permission checks
-        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
+        Gate::before(function ($user, $ability) {
             return $user->hasRole('super-admin') ? true : null;
         });
 
@@ -49,6 +56,7 @@ class AppServiceProvider extends ServiceProvider
         $this->registerThemeErrorPages();
 
         $this->configureDefaults();
+        $this->configureRateLimiting();
         $this->configureMailFromSettings();
         View::addNamespace('core', resource_path('views/core'));
         $registry->addCollector(fn () => app(ContentRouteRegistry::class)->publishedPageUrls());
@@ -57,11 +65,11 @@ class AppServiceProvider extends ServiceProvider
     protected function registerThemeErrorPages(): void
     {
         try {
-            $themeSlug = \App\Models\Setting::get('active_theme_slug', 'midnight-blue');
+            $themeSlug = Setting::get('active_theme_slug', 'midnight-blue');
             $errorsPath = base_path("themes/{$themeSlug}/views/errors");
 
             if (is_dir($errorsPath)) {
-                \Illuminate\Support\Facades\View::addNamespace('errors', $errorsPath);
+                View::addNamespace('errors', $errorsPath);
             }
         } catch (\Exception $e) {
             // DB not ready (e.g. during migrations/tests) — keep default error views.
@@ -71,17 +79,18 @@ class AppServiceProvider extends ServiceProvider
     protected function configureMailFromSettings(): void
     {
         try {
-            $host = \App\Models\Setting::get('mail_host');
-            if (!$host) return;
+            $mailer = Setting::get('mail_mailer');
+            $encryption = Setting::get('mail_encryption', 'tls');
+
             config([
-                'mail.default'                 => \App\Models\Setting::get('mail_mailer', 'smtp'),
-                'mail.mailers.smtp.host'       => $host,
-                'mail.mailers.smtp.port'       => (int) \App\Models\Setting::get('mail_port', 587),
-                'mail.mailers.smtp.username'   => \App\Models\Setting::get('mail_username'),
-                'mail.mailers.smtp.password'   => \App\Models\Setting::get('mail_password'),
-                'mail.mailers.smtp.encryption' => \App\Models\Setting::get('mail_encryption', 'tls'),
-                'mail.from.address'            => \App\Models\Setting::get('mail_from_address', config('mail.from.address')),
-                'mail.from.name'               => \App\Models\Setting::get('mail_from_name', config('mail.from.name')),
+                'mail.default' => $mailer ?: config('mail.default'),
+                'mail.mailers.smtp.host' => Setting::get('mail_host', config('mail.mailers.smtp.host')),
+                'mail.mailers.smtp.port' => (int) Setting::get('mail_port', 587),
+                'mail.mailers.smtp.username' => Setting::get('mail_username'),
+                'mail.mailers.smtp.password' => Setting::get('mail_password'),
+                'mail.mailers.smtp.scheme' => $encryption === 'none' ? null : $encryption,
+                'mail.from.address' => Setting::get('mail_from_address', config('mail.from.address')),
+                'mail.from.name' => Setting::get('mail_from_name', config('mail.from.name')),
             ]);
         } catch (\Exception $e) {
             // DB not ready (e.g. during migrations) — skip silently
@@ -100,7 +109,7 @@ class AppServiceProvider extends ServiceProvider
         );
 
         Password::defaults(
-            fn(): ?Password => app()->isProduction()
+            fn (): ?Password => app()->isProduction()
             ? Password::min(12)
                 ->mixedCase()
                 ->letters()
@@ -109,5 +118,25 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    protected function configureRateLimiting(): void
+    {
+        RateLimiter::for('graphql', function (Request $request) {
+            $apiKey = $request->attributes->get('current_api_key');
+
+            if ($apiKey instanceof ApiKey) {
+                return Limit::perMinute(max(1, (int) config('cms.api_keys.graphql_rate_limit_per_minute', 120)))
+                    ->by('api-key:'.$apiKey->id);
+            }
+
+            if ($request->user()) {
+                return Limit::perMinute(max(1, (int) config('cms.graphql.authenticated_rate_limit_per_minute', 240)))
+                    ->by('user:'.$request->user()->getAuthIdentifier());
+            }
+
+            return Limit::perMinute(max(1, (int) config('cms.graphql.guest_rate_limit_per_minute', 60)))
+                ->by('ip:'.$request->ip());
+        });
     }
 }

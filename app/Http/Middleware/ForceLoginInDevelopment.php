@@ -12,12 +12,30 @@ class ForceLoginInDevelopment
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (app()->isLocal() && ! Auth::check()) {
-            $user = User::where('email', 'admin@cms.test')->first();
+        $forceLoginEmail = app()->isLocal() ? env('CMS_FORCE_LOGIN_EMAIL') : null;
 
-            if ($user) {
-                Auth::login($user);
-            }
+        if (! $forceLoginEmail || Auth::check()) {
+            return $next($request);
+        }
+
+        if ($request->routeIs(
+            'login',
+            'login.store',
+            'logout',
+            'register',
+            'register.store',
+            'password.*',
+            'verification.*',
+            'two-factor.*',
+            'admin.*',
+        )) {
+            return $next($request);
+        }
+
+        $user = User::where('email', $forceLoginEmail)->first();
+
+        if ($user) {
+            Auth::login($user);
         }
 
         return $next($request);

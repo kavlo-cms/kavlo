@@ -2,11 +2,11 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Log;
 use App\Models\Theme;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 
 class ThemeServiceProvider extends ServiceProvider
 {
@@ -23,17 +23,27 @@ class ThemeServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if ($this->app->runningInConsole()) {
+        if ($this->app->runningInConsole() && ! $this->app->runningUnitTests()) {
             return;
         }
 
-        $activeThemeSlug = Cache::rememberForever('active_theme_slug', function () {
-            $theme = \App\Models\Theme::where('is_active', true)->first();
+        if (! Schema::hasTable('themes')) {
+            $this->registerThemeNamespaces(Theme::DEFAULT_THEME_SLUG);
 
-            if (!$theme) {
-                $theme = \App\Models\Theme::first();
+            return;
+        }
+
+        Theme::discover();
+
+        $activeThemeSlug = Cache::rememberForever('active_theme_slug', function () {
+            $theme = Theme::where('is_active', true)->first();
+
+            if (! $theme) {
+                $theme = Theme::where('slug', Theme::DEFAULT_THEME_SLUG)->first()
+                    ?? Theme::orderBy('name')->first();
+
                 if ($theme) {
-                    $theme->update(['is_active' => true]);
+                    $theme->activate();
                 }
             }
 
@@ -42,16 +52,21 @@ class ThemeServiceProvider extends ServiceProvider
 
         // 3. Use the string to set the paths
         if ($activeThemeSlug) {
-            View::prependNamespace('theme', base_path("themes/{$activeThemeSlug}/views"));
-            View::prependNamespace('blocks', [
-                base_path("themes/{$activeThemeSlug}/blocks"),
-                base_path('blocks'),
-            ]);
+            $this->registerThemeNamespaces($activeThemeSlug);
+        }
+    }
 
-            $functions = base_path("themes/{$activeThemeSlug}/functions.php");
-            if (file_exists($functions)) {
-                require_once $functions;
-            }
+    private function registerThemeNamespaces(string $slug): void
+    {
+        View::prependNamespace('theme', base_path("themes/{$slug}/views"));
+        View::prependNamespace('blocks', [
+            base_path("themes/{$slug}/blocks"),
+            base_path('blocks'),
+        ]);
+
+        $functions = base_path("themes/{$slug}/functions.php");
+        if (file_exists($functions)) {
+            require_once $functions;
         }
     }
 }

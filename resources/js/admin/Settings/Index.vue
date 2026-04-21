@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
-import { Save } from 'lucide-vue-next';
+import { Link, useForm } from '@inertiajs/vue3';
+import { Code, Save } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -24,8 +24,6 @@ interface Settings {
     meta_description?: string;
     homepage_id?: string | null;
     favicon?: string;
-    head_scripts?: string;
-    body_scripts?: string;
 }
 
 const props = defineProps<{
@@ -46,8 +44,6 @@ const form = useForm({
     meta_description:  props.settings.meta_description  ?? '',
     homepage_id:       props.settings.homepage_id       ?? null,
     favicon:           props.settings.favicon           ?? '',
-    head_scripts:      props.settings.head_scripts      ?? '',
-    body_scripts:      props.settings.body_scripts      ?? '',
 });
 
 function save() {
@@ -120,39 +116,6 @@ function save() {
                     </CardContent>
                 </Card>
 
-                <!-- Scripts & Tracking -->
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Scripts &amp; Tracking</CardTitle>
-                        <CardDescription>Inject custom code into your site's HTML.</CardDescription>
-                    </CardHeader>
-                    <CardContent class="space-y-4">
-                        <div class="space-y-1.5">
-                            <Label for="head_scripts">Head Scripts</Label>
-                            <Textarea
-                                id="head_scripts"
-                                v-model="form.head_scripts"
-                                placeholder="<!-- Paste scripts to inject inside <head> -->"
-                                rows="5"
-                                class="font-mono text-xs"
-                            />
-                            <p class="text-xs text-muted-foreground">Injected inside <code class="rounded bg-muted px-1">&lt;head&gt;</code> — use for meta tags, analytics, etc.</p>
-                        </div>
-
-                        <div class="space-y-1.5">
-                            <Label for="body_scripts">Body Scripts</Label>
-                            <Textarea
-                                id="body_scripts"
-                                v-model="form.body_scripts"
-                                placeholder="<!-- Paste scripts to inject before </body> -->"
-                                rows="5"
-                                class="font-mono text-xs"
-                            />
-                            <p class="text-xs text-muted-foreground">Injected before <code class="rounded bg-muted px-1">&lt;/body&gt;</code> — use for chat widgets, tag managers, etc.</p>
-                        </div>
-                    </CardContent>
-                </Card>
-
                 <!-- SEO -->
                 <Card>
                     <CardHeader>
@@ -220,6 +183,24 @@ function save() {
                             </Select>
                             <p class="text-xs text-muted-foreground">The page displayed at your site root.</p>
                         </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Scripts &amp; Tracking</CardTitle>
+                        <CardDescription>Manage inline snippets, external URLs, and uploaded script files from one place.</CardDescription>
+                    </CardHeader>
+                    <CardContent class="space-y-4">
+                        <p class="text-sm text-muted-foreground">
+                            Use the dedicated script manager for analytics tags, chat widgets, and custom JavaScript placement.
+                        </p>
+                        <Button as-child variant="outline" class="w-full justify-start">
+                            <Link href="/admin/scripts">
+                                <Code class="mr-2 h-4 w-4" />
+                                Open Script Manager
+                            </Link>
+                        </Button>
                     </CardContent>
                 </Card>
 

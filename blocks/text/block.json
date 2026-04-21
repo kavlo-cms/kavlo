@@ -1,1 +1,1 @@
-{"label":"Paragraph","description":"Rich text paragraph","group":"text","icon":"AlignLeft","source":"core"}
+{"$schema":"../../resources/schemas/block.schema.json","label":"Paragraph","description":"Rich text paragraph","group":"text","icon":"AlignLeft","source":"core"}

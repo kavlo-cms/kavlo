@@ -1,1 +1,1 @@
-{"label":"Divider","description":"Horizontal separator line","group":"layout","icon":"Minus","source":"core"}
+{"$schema":"../../resources/schemas/block.schema.json","label":"Divider","description":"Horizontal separator line","group":"layout","icon":"Minus","source":"core"}

@@ -1,1 +1,37 @@
-{"label":"Hero","description":"Full-width hero section with headline and CTA","group":"components","icon":"Sparkles","source":"core"}
+{
+    "$schema": "../../resources/schemas/block.schema.json",
+    "label": "Hero",
+    "description": "Full-width hero section with configurable content width and CTA",
+    "group": "components",
+    "icon": "Sparkles",
+    "source": "core",
+    "fields": [
+        {
+            "key": "background_image",
+            "label": "Background Image",
+            "type": "media"
+        },
+        {
+            "key": "width_mode",
+            "label": "Layout Width",
+            "type": "select",
+            "options": [
+                {
+                    "value": "full-page-constrained",
+                    "label": "Full page width, constrained content"
+                },
+                {
+                    "value": "full-page-unconstrained",
+                    "label": "Full page width, unconstrained content"
+                },
+                {
+                    "value": "full-content-width",
+                    "label": "Full content width"
+                }
+            ]
+        }
+    ],
+    "defaultData": {
+        "width_mode": "full-page-constrained"
+    }
+}

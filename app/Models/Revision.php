@@ -12,12 +12,14 @@ class Revision extends Model
         'user_id',
         'content_snapshot',
         'meta_snapshot',
+        'page_snapshot',
         'label',
     ];
 
     protected $casts = [
         'content_snapshot' => 'array',
-        'meta_snapshot'    => 'array',
+        'meta_snapshot' => 'array',
+        'page_snapshot' => 'array',
     ];
 
     public function page(): BelongsTo

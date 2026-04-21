@@ -19,4 +19,5 @@ export type AdminNavItem = {
     title: string;
     href: string;
     icon?: string; // kebab-case lucide icon name, e.g. "shopping-cart"
+    permission?: string;
 };

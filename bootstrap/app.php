@@ -1,7 +1,12 @@
 <?php
 
+use App\Http\Middleware\ForceLoginInDevelopment;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\HandleRedirects;
+use App\Http\Middleware\LogAdminActivity;
+use App\Http\Middleware\RequireAdminRole;
+use App\Http\Middleware\SetSecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,16 +20,18 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin.role' => \App\Http\Middleware\RequireAdminRole::class,
+            'admin.role' => RequireAdminRole::class,
+            'admin.activity' => LogAdminActivity::class,
         ]);
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(append: [
             HandleAppearance::class,
-            \App\Http\Middleware\ForceLoginInDevelopment::class,
-            \App\Http\Middleware\HandleRedirects::class,
+            ForceLoginInDevelopment::class,
+            HandleRedirects::class,
             HandleInertiaRequests::class,
+            SetSecurityHeaders::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
     })

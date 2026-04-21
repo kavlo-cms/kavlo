@@ -1,5 +1,23 @@
+@php
+    $widthMode = $data['width_mode'] ?? 'full-page-constrained';
+    $sectionClasses = 'relative overflow-hidden bg-slate-950 py-24';
+    $contentClasses = 'relative z-10 text-center';
+
+    if (in_array($widthMode, ['full-page-constrained', 'full-page-unconstrained'], true)) {
+        $sectionClasses .= ' left-1/2 right-1/2 w-screen max-w-none -translate-x-1/2';
+    } else {
+        $sectionClasses .= ' mx-auto max-w-screen-xl';
+    }
+
+    if ($widthMode === 'full-page-constrained') {
+        $contentClasses .= ' mx-auto max-w-screen-xl px-6';
+    } elseif ($widthMode === 'full-page-unconstrained') {
+        $contentClasses .= ' w-full px-6';
+    }
+@endphp
+
 <section
-    class="relative py-24 overflow-hidden bg-slate-950"
+    class="{{ $sectionClasses }}"
     @if(!empty($data['background_image']))
         style="background-image: url('{{ $data['background_image'] }}'); background-size: cover; background-position: center;"
     @endif
@@ -7,7 +25,7 @@
     @if(!empty($data['background_image']))
         <div class="absolute inset-0 bg-slate-950/60"></div>
     @endif
-    <div class="container mx-auto px-6 relative z-10 text-center">
+    <div class="{{ $contentClasses }}">
         <h1 class="text-6xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-500 mb-6">
             {{ $data['headline'] ?? '' }}
         </h1>
@@ -16,10 +34,7 @@
         </p>
         @if (!empty($data['children']))
             @foreach ($data['children'] as $child)
-                @includeFirst(
-                    ['theme::blocks.' . $child['type'] . '.render', 'blocks::' . $child['type'] . '.render'],
-                    ['data' => $child['data'] ?? []]
-                )
+                {!! kavlo_render_block(is_array($child) ? $child : []) !!}
             @endforeach
         @endif
     </div>

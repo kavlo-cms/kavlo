@@ -1,1 +1,1 @@
-{"label":"Video","description":"YouTube or Vimeo embed","group":"media","icon":"Video","source":"core"}
+{"$schema":"../../resources/schemas/block.schema.json","label":"Video","description":"YouTube or Vimeo embed","group":"media","icon":"Video","source":"core"}

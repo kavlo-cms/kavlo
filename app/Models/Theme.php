@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Services\PublicPageCache;
+use App\Services\ThemeManifest;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 
 class Theme extends Model
 {
+    public const DEFAULT_THEME_SLUG = 'midnight-blue';
+
     protected $fillable = [
         'name',
         'slug',
@@ -39,6 +43,7 @@ class Theme extends Model
         $this->update(['is_active' => true]);
 
         Cache::forget('active_theme_slug');
+        app(PublicPageCache::class)->flush();
     }
 
     /**
@@ -50,17 +55,13 @@ class Theme extends Model
     {
         $configPath = base_path("themes/{$this->slug}/theme.json");
 
-        if (File::exists($configPath)) {
-            return json_decode(File::get($configPath), true) ?? [];
-        }
-
-        return [];
+        return app(ThemeManifest::class)->loadFromPath($configPath);
     }
 
     public static function discover(): void
     {
         $themePath = base_path('themes');
-        if (!File::exists($themePath)) {
+        if (! File::exists($themePath)) {
             return;
         }
 
@@ -89,5 +90,14 @@ class Theme extends Model
 
         // Optional: Delete themes from DB that no longer exist on disk
         static::whereNotIn('slug', $foundSlugs)->delete();
+
+        if (! static::where('is_active', true)->exists()) {
+            $defaultTheme = static::where('slug', self::DEFAULT_THEME_SLUG)->first()
+                ?? static::orderBy('name')->first();
+
+            if ($defaultTheme) {
+                $defaultTheme->activate();
+            }
+        }
     }
 }

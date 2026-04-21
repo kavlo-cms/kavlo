@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\PublicPageCache;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
@@ -12,6 +13,7 @@ class Setting extends Model
     public static function get(string $key, mixed $default = null): mixed
     {
         $all = static::allCached();
+
         return $all[$key] ?? $default;
     }
 
@@ -19,6 +21,7 @@ class Setting extends Model
     {
         static::updateOrCreate(['key' => $key], ['value' => $value]);
         Cache::forget('settings.all');
+        app(PublicPageCache::class)->flush();
     }
 
     /** @param array<string,mixed> $values */
@@ -28,6 +31,7 @@ class Setting extends Model
             static::updateOrCreate(['key' => $key], ['value' => $value]);
         }
         Cache::forget('settings.all');
+        app(PublicPageCache::class)->flush();
     }
 
     /** @return array<string,string|null> */

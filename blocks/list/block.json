@@ -1,1 +1,1 @@
-{"label":"List","description":"Bullet or numbered list","group":"text","icon":"List","source":"core"}
+{"$schema":"../../resources/schemas/block.schema.json","label":"List","description":"Bullet or numbered list","group":"text","icon":"List","source":"core"}

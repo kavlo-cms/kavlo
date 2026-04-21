@@ -25,6 +25,7 @@ import {
     Settings,
     ShieldCheck,
     ShoppingCart,
+    Search,
     Star,
     Tag,
     Users,
@@ -44,7 +45,9 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import admin from '@/routes/admin';
-import type { AdminNavItem, NavItem } from '@/types';
+import type { Auth, AdminNavItem, NavItem } from '@/types';
+
+type GuardedNavItem = NavItem & { permission?: string };
 
 const iconMap: Record<string, LucideIcon> = {
     'archive': Archive,
@@ -63,6 +66,7 @@ const iconMap: Record<string, LucideIcon> = {
     'settings': Settings,
     'shield-check': ShieldCheck,
     'shopping-cart': ShoppingCart,
+    'search': Search,
     'star': Star,
     'tag': Tag,
     'users': Users,
@@ -76,53 +80,69 @@ function toNavItem(item: AdminNavItem): NavItem {
     return { title: item.title, href: item.href, icon: resolveIcon(item.icon) };
 }
 
-const adminNav: AdminNavItem[] = usePage().props.adminNav ?? [];
+const page = usePage<{ auth?: Auth; adminNav?: AdminNavItem[] }>();
+const adminNav: AdminNavItem[] = page.props.adminNav ?? [];
+const authPermissions = computed(() => new Set(page.props.auth?.permissions ?? []));
+
+function canAccess(permission?: string): boolean {
+    return !permission || authPermissions.value.has(permission);
+}
+
+function filterItems(items: GuardedNavItem[]): NavItem[] {
+    return items.filter((item) => canAccess(item.permission)).map(({ permission, ...item }) => item);
+}
 
 function dynamicGroup(label: string): NavItem[] {
-    return adminNav.filter((i) => i.group === label).map(toNavItem);
+    return adminNav.filter((i) => i.group === label && canAccess(i.permission)).map(toNavItem);
 }
 
 const dynamicGroups = computed(() => {
     const knownGroups = new Set(['Content', 'Structure', 'Settings', 'System']);
     const extra: Record<string, NavItem[]> = {};
     for (const item of adminNav) {
-        if (!knownGroups.has(item.group)) {
+        if (!knownGroups.has(item.group) && canAccess(item.permission)) {
             (extra[item.group] ??= []).push(toNavItem(item));
         }
     }
     return extra;
 });
 
-const contentItems: NavItem[] = [
+const contentItems = computed(() => filterItems([
     { title: 'Dashboard', href: admin.dashboard.url(), icon: LayoutDashboard },
-    { title: 'Pages',     href: admin.pages.index.url(), icon: FileText },
-    { title: 'Media',     href: '/admin/media', icon: Image },
-    { title: 'Forms',     href: admin.forms.index.url(), icon: ClipboardList },
+    { title: 'Search', href: '/admin/search', icon: Search },
+    { title: 'Pages', href: admin.pages.index.url(), icon: FileText, permission: 'view pages' },
+    { title: 'Media', href: '/admin/media', icon: Image, permission: 'view media' },
+    { title: 'Forms', href: admin.forms.index.url(), icon: ClipboardList, permission: 'view forms' },
     ...dynamicGroup('Content'),
-];
+]));
 
-const structureItems: NavItem[] = [
-    { title: 'Menus',     href: '/admin/menus', icon: Navigation },
-    { title: 'Blocks',    href: admin.blocks.index.url(), icon: LayoutTemplate },
-    { title: 'Redirects', href: admin.redirects.index.url(), icon: ArrowRightLeft },
+const structureItems = computed(() => filterItems([
+    { title: 'Menus', href: '/admin/menus', icon: Navigation, permission: 'view menus' },
+    { title: 'Email Templates', href: '/admin/email-templates', icon: Mail, permission: 'view email templates' },
+    { title: 'DataHub', href: admin.datahub.index.url(), icon: Database, permission: 'view datahub' },
+    { title: 'Blocks', href: admin.blocks.index.url(), icon: LayoutTemplate, permission: 'view pages' },
+    { title: 'Redirects', href: admin.redirects.index.url(), icon: ArrowRightLeft, permission: 'view redirects' },
     ...dynamicGroup('Structure'),
-];
+]));
 
-const settingsItems: NavItem[] = [
-    { title: 'General',       href: admin.settings.index.url(), icon: Settings },
-    { title: 'Email',         href: admin.settings.email.index.url(), icon: Mail },
-    { title: 'Themes',        href: admin.themes.index.url(),   icon: Paintbrush },
-    { title: 'Plugins',       href: admin.plugins.index.url(),  icon: Plug },
-    { title: 'Users & Roles', href: admin.users.index.url(),    icon: Users },
+const settingsItems = computed(() => filterItems([
+    { title: 'General', href: admin.settings.index.url(), icon: Settings, permission: 'view settings' },
+    { title: 'Scripts', href: '/admin/scripts', icon: Code, permission: 'view scripts' },
+    { title: 'Email', href: admin.settings.email.index.url(), icon: Mail, permission: 'view settings' },
+    { title: 'Themes', href: admin.themes.index.url(), icon: Paintbrush, permission: 'view themes' },
+    { title: 'Plugins', href: admin.plugins.index.url(), icon: Plug, permission: 'view plugins' },
+    { title: 'Users & Roles', href: admin.users.index.url(), icon: Users, permission: 'view users' },
     ...dynamicGroup('Settings'),
-];
+]));
 
-const systemItems: NavItem[] = [
-    { title: 'Activity Log',  href: admin.activity.index.url(),    icon: History },
-    { title: 'Cache',         href: admin.cache.index.url(),       icon: Zap },
-    { title: 'Maintenance',   href: admin.maintenance.index.url(), icon: WrenchIcon },
+const systemItems = computed(() => filterItems([
+    { title: 'Analytics', href: '/admin/analytics', icon: Globe, permission: 'view analytics' },
+    { title: 'Activity Log', href: admin.activity.index.url(), icon: History, permission: 'view activity log' },
+    { title: 'Backups', href: admin.backups.index.url(), icon: Archive, permission: 'manage backups' },
+    { title: 'Cache', href: admin.cache.index.url(), icon: Zap, permission: 'manage cache' },
+    { title: 'Maintenance', href: admin.maintenance.index.url(), icon: WrenchIcon, permission: 'manage maintenance' },
     ...dynamicGroup('System'),
-];
+]));
 </script>
 
 <template>
@@ -140,10 +160,10 @@ const systemItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain label="Content" :items="contentItems" />
-            <NavMain label="Structure" :items="structureItems" />
-            <NavMain label="Settings" :items="settingsItems" />
-            <NavMain label="System" :items="systemItems" />
+            <NavMain v-if="contentItems.length" label="Content" :items="contentItems" />
+            <NavMain v-if="structureItems.length" label="Structure" :items="structureItems" />
+            <NavMain v-if="settingsItems.length" label="Settings" :items="settingsItems" />
+            <NavMain v-if="systemItems.length" label="System" :items="systemItems" />
             <NavMain
                 v-for="(items, label) in dynamicGroups"
                 :key="label"

@@ -19,7 +19,7 @@ class ContentRouteRegistry
 
     public function refresh(): array
     {
-        Cache::forget(self::CACHE_KEY);
+        $this->forget();
 
         return $this->manifest();
     }
@@ -27,6 +27,8 @@ class ContentRouteRegistry
     public function forget(): void
     {
         Cache::forget(self::CACHE_KEY);
+        app(MenuRenderCache::class)->flush();
+        app(PublicPageCache::class)->flush();
     }
 
     public function routes(array $types = [], bool $preview = false): array
@@ -344,6 +346,6 @@ class ContentRouteRegistry
             return '/';
         }
 
-        return '/' . trim($trimmed, '/');
+        return '/'.trim($trimmed, '/');
     }
 }

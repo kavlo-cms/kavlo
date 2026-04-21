@@ -3,9 +3,6 @@
     @if(!empty($data['background']))style="background: {{ $data['background'] }}"@endif
 >
     @foreach(($data['children'] ?? []) as $child)
-        @includeFirst(
-            ['theme::blocks.' . $child['type'] . '.render', 'blocks::' . $child['type'] . '.render'],
-            ['data' => $child['data'] ?? []]
-        )
+        {!! kavlo_render_block(is_array($child) ? $child : []) !!}
     @endforeach
 </div>

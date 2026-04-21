@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckCircle2, FolderOpen, Image as ImageIcon, Search, Trash2, Upload, X } from 'lucide-vue-next';
+import { Archive, CheckCircle2, File, FileText, FolderOpen, Image as ImageIcon, Music, Search, Trash2, Upload, Video, X } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -10,8 +10,11 @@ export interface MediaItem {
     name: string;
     file_name: string;
     mime_type: string;
+    extension: string;
+    kind: 'image' | 'video' | 'audio' | 'pdf' | 'document' | 'archive' | 'file';
     size: number;
     url: string;
+    download_url: string;
     folder: string;
     alt: string;
     created_at: string;
@@ -21,6 +24,23 @@ const props = defineProps<{
     open: boolean;
     multiple?: boolean;
 }>();
+
+const uploadAccept = [
+    'image/*',
+    'video/*',
+    'audio/*',
+    '.pdf',
+    '.doc',
+    '.docx',
+    '.xls',
+    '.xlsx',
+    '.ppt',
+    '.pptx',
+    '.txt',
+    '.csv',
+    '.json',
+    '.zip',
+].join(',');
 
 const emit = defineEmits<{
     'update:open': [val: boolean];
@@ -35,6 +55,7 @@ const search = ref('');
 const selectedItem = ref<MediaItem | null>(null);
 const loading = ref(false);
 const uploading = ref(false);
+const uploadError = ref('');
 const isDragOver = ref(false);
 const editingAlt = ref<{ id: number; value: string } | null>(null);
 const newFolderName = ref('');
@@ -56,7 +77,11 @@ function getCsrfToken(): string {
         : (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
 }
 
-const headers = () => ({ 'X-XSRF-TOKEN': getCsrfToken() });
+const headers = () => ({
+    'Accept': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
+    'X-XSRF-TOKEN': getCsrfToken(),
+});
 
 // ── API calls ─────────────────────────────────────────────────────────────────
 async function loadFolders() {
@@ -80,6 +105,7 @@ async function loadMedia(folder = activeFolder.value) {
 
 async function uploadFiles(files: FileList | File[]) {
     uploading.value = true;
+    uploadError.value = '';
     try {
         for (const file of Array.from(files)) {
             const fd = new FormData();
@@ -96,7 +122,11 @@ async function uploadFiles(files: FileList | File[]) {
                 if (!folders.value.includes(activeFolder.value)) {
                     folders.value.push(activeFolder.value);
                 }
+                continue;
             }
+
+            uploadError.value = await extractError(res, `Uploading "${file.name}" failed.`);
+            break;
         }
     } finally {
         uploading.value = false;
@@ -147,8 +177,12 @@ async function onDrop(e: DragEvent) {
 }
 
 function onFileInput(e: Event) {
-    const files = (e.target as HTMLInputElement).files;
-    if (files?.length) uploadFiles(files);
+    const target = e.target as HTMLInputElement;
+    const files = target.files;
+    if (files?.length) {
+        uploadFiles(files);
+    }
+    target.value = '';
 }
 
 // ── Folder management ─────────────────────────────────────────────────────────
@@ -192,6 +226,38 @@ function formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function itemIcon(item: MediaItem) {
+    switch (item.kind) {
+    case 'image': return ImageIcon;
+    case 'video': return Video;
+    case 'audio': return Music;
+    case 'pdf':
+    case 'document': return FileText;
+    case 'archive': return Archive;
+    default: return File;
+    }
+}
+
+async function extractError(res: Response, fallback: string): Promise<string> {
+    const contentType = res.headers.get('content-type') ?? '';
+
+    if (contentType.includes('application/json')) {
+        const payload = await res.json();
+        const errors = payload?.errors ? Object.values(payload.errors).flat() : [];
+        const firstError = errors.find((value) => typeof value === 'string');
+
+        if (typeof firstError === 'string' && firstError.length > 0) {
+            return firstError;
+        }
+
+        if (typeof payload?.message === 'string' && payload.message.length > 0) {
+            return payload.message;
+        }
+    }
+
+    return fallback;
 }
 
 onMounted(() => {
@@ -262,12 +328,15 @@ onMounted(() => {
                             />
                         </div>
                         <label class="cursor-pointer">
-                            <input type="file" multiple accept="image/*,video/*,application/pdf" class="sr-only" @change="onFileInput" />
+                            <input type="file" multiple :accept="uploadAccept" class="sr-only" @change="onFileInput" />
                             <Button size="sm" variant="outline" as="span" :disabled="uploading">
                                 <Upload class="mr-1.5 h-3.5 w-3.5" />
                                 {{ uploading ? 'Uploading…' : 'Upload' }}
                             </Button>
                         </label>
+                    </div>
+                    <div v-if="uploadError" class="border-b px-3 py-2 text-xs text-destructive">
+                        {{ uploadError }}
                     </div>
 
                     <!-- Grid + drop zone -->
@@ -324,8 +393,19 @@ onMounted(() => {
                                         class="h-full w-full object-cover"
                                         loading="lazy"
                                     />
-                                    <div v-else class="flex h-full items-center justify-center">
-                                        <ImageIcon class="h-8 w-8 text-muted-foreground/40" />
+                                    <video
+                                        v-else-if="item.kind === 'video'"
+                                        :src="item.url"
+                                        class="h-full w-full object-cover"
+                                        muted
+                                        playsinline
+                                        preload="metadata"
+                                    />
+                                    <div v-else class="flex h-full flex-col items-center justify-center gap-2">
+                                        <component :is="itemIcon(item)" class="h-8 w-8 text-muted-foreground/40" />
+                                        <span class="rounded bg-background/80 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                            {{ item.extension || item.kind }}
+                                        </span>
                                     </div>
                                 </div>
 

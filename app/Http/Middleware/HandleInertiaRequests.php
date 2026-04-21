@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Facades\Hook;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -38,16 +39,17 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            'name' => \App\Models\Setting::get('site_name', config('app.name')),
+            'name' => Setting::get('site_name', config('app.name')),
             'auth' => [
                 'user' => $request->user(),
+                'permissions' => $request->user()?->getAllPermissions()->pluck('name')->values()->all() ?? [],
             ],
             'flash' => [
                 'success' => session('success'),
-                'error'   => session('error'),
+                'error' => session('error'),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
-            'adminNav'    => Hook::applyFilters('admin.nav', []),
+            'adminNav' => Hook::applyFilters('admin.nav', []),
         ];
     }
 }

@@ -1,8 +1,30 @@
 {
+    "$schema": "../../resources/schemas/plugin.schema.json",
     "name": "Example SEO Plugin",
     "slug": "example-seo",
     "version": "1.0.0",
-    "description": "Adds advanced SEO fields and structured data (JSON-LD) to your pages.",
-    "author": "CMS Team",
-    "provider": "Plugins\\ExampleSeo\\ExampleSeoServiceProvider"
+    "description": "Example constrained-runtime plugin showing admin nav, a page-builder block, a page type, forms, DataHub, media, storage, and HTTP capabilities.",
+    "author": "Kavlo Team",
+    "entrypoint": "Plugins\\ExampleSeo\\ExampleSeoPlugin",
+    "scopes": [
+        "admin_nav:write",
+        "datahub:write",
+        "forms:write",
+        "hooks:write",
+        "http:write",
+        "media:read",
+        "migrations:write",
+        "models:read",
+        "storage:write"
+    ],
+    "model_namespace": "Plugins\\ExampleSeo\\Models",
+    "admin_nav": [
+        {
+            "group": "Content",
+            "title": "SEO",
+            "href": "/admin/plugins",
+            "icon": "search",
+            "permission": "view plugins"
+        }
+    ]
 }

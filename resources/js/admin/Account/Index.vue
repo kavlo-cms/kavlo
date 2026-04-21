@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
-import { KeyRound, Save, User as UserIcon } from 'lucide-vue-next';
+import { router, useForm } from '@inertiajs/vue3';
+import { KeyRound, RefreshCw, Save, ShieldCheck, Trash2, User as UserIcon } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -17,7 +18,37 @@ interface AccountUser {
     created_at: string;
 }
 
-const props = defineProps<{ user: AccountUser }>();
+interface ApiKeyAbility {
+    key: string;
+    label: string;
+    description: string;
+}
+
+interface AccountApiKey {
+    id: number;
+    name: string;
+    key_prefix: string;
+    abilities: string[];
+    last_used_at: string | null;
+    last_used_ip: string | null;
+    expires_at: string | null;
+    revoked_at: string | null;
+    created_at: string;
+    status: 'active' | 'expired' | 'revoked';
+}
+
+interface GeneratedApiKey {
+    id: number;
+    name: string;
+    token: string;
+}
+
+const props = defineProps<{
+    user: AccountUser;
+    apiKeys: AccountApiKey[];
+    apiKeyAbilities: ApiKeyAbility[];
+    generatedApiKey: GeneratedApiKey | null;
+}>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Account Settings', href: admin.account.index.url() },
@@ -45,6 +76,65 @@ function savePassword() {
         preserveScroll: true,
         onSuccess: () => passwordForm.reset(),
     });
+}
+
+const apiKeysBaseUrl = '/admin/account/api-keys';
+
+const apiKeyForm = useForm({
+    name: '',
+    abilities: ['graphql.read'],
+    expires_at: '',
+});
+
+function toggleAbility(ability: string, checked: boolean) {
+    if (checked) {
+        if (!apiKeyForm.abilities.includes(ability)) {
+            apiKeyForm.abilities.push(ability);
+        }
+
+        if (ability === 'graphql.preview' && !apiKeyForm.abilities.includes('graphql.read')) {
+            apiKeyForm.abilities.push('graphql.read');
+        }
+
+        return;
+    }
+
+    if (ability === 'graphql.read' && apiKeyForm.abilities.includes('graphql.preview')) {
+        return;
+    }
+
+    apiKeyForm.abilities = apiKeyForm.abilities.filter((value) => value !== ability);
+}
+
+function createApiKey() {
+    apiKeyForm.post(apiKeysBaseUrl, {
+        preserveScroll: true,
+        onSuccess: () => apiKeyForm.reset('name', 'expires_at'),
+    });
+}
+
+function revokeApiKey(id: number) {
+    router.delete(`${apiKeysBaseUrl}/${id}`, {
+        preserveScroll: true,
+    });
+}
+
+function rotateApiKey(id: number) {
+    router.post(`${apiKeysBaseUrl}/${id}/rotate`, {}, {
+        preserveScroll: true,
+    });
+}
+
+function formatDate(value: string | null) {
+    return value ? new Date(value).toLocaleString() : 'Never';
+}
+
+function statusClass(status: AccountApiKey['status']) {
+    return {
+        active: 'bg-emerald-500/10 text-emerald-600',
+        expired: 'bg-amber-500/10 text-amber-600',
+        revoked: 'bg-muted text-muted-foreground',
+    }[status];
 }
 </script>
 
@@ -168,6 +258,155 @@ function savePassword() {
                         </form>
                     </CardContent>
                 </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle class="flex items-center gap-2">
+                            <ShieldCheck class="h-4 w-4" />
+                            API Keys
+                        </CardTitle>
+                        <CardDescription>
+                            Create personal keys for DataHub and GraphQL access. Secrets are shown only once.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent class="space-y-6">
+                        <div v-if="generatedApiKey" class="space-y-2 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-4">
+                            <div>
+                                <p class="text-sm font-medium">New API key created</p>
+                                <p class="text-sm text-muted-foreground">
+                                    Copy this token now. It will not be shown again for <span class="font-medium">{{ generatedApiKey.name }}</span>.
+                                </p>
+                            </div>
+                            <Input :model-value="generatedApiKey.token" readonly />
+                        </div>
+
+                        <form @submit.prevent="createApiKey" class="space-y-4 rounded-lg border p-4">
+                            <div class="space-y-1.5">
+                                <Label for="api_key_name">Key name</Label>
+                                <Input
+                                    id="api_key_name"
+                                    v-model="apiKeyForm.name"
+                                    placeholder="DataHub integration"
+                                />
+                                <p v-if="apiKeyForm.errors.name" class="text-sm text-destructive">
+                                    {{ apiKeyForm.errors.name }}
+                                </p>
+                            </div>
+
+                             <div class="space-y-3">
+                                 <Label>Scopes</Label>
+                                <div
+                                    v-for="ability in apiKeyAbilities"
+                                    :key="ability.key"
+                                    class="flex items-start gap-3 rounded-md border p-3"
+                                >
+                                    <Checkbox
+                                        :id="ability.key"
+                                        :checked="apiKeyForm.abilities.includes(ability.key)"
+                                        @update:checked="(value) => toggleAbility(ability.key, !!value)"
+                                    />
+                                    <div class="space-y-1">
+                                        <Label :for="ability.key" class="font-medium">{{ ability.label }}</Label>
+                                        <p class="text-sm text-muted-foreground">{{ ability.description }}</p>
+                                    </div>
+                                </div>
+                                 <p v-if="apiKeyForm.errors.abilities" class="text-sm text-destructive">
+                                     {{ apiKeyForm.errors.abilities }}
+                                 </p>
+                             </div>
+
+                            <div class="space-y-1.5">
+                                <Label for="api_key_expires_at">Expires at</Label>
+                                <Input
+                                    id="api_key_expires_at"
+                                    v-model="apiKeyForm.expires_at"
+                                    type="datetime-local"
+                                />
+                                <p class="text-xs text-muted-foreground">
+                                    Leave blank to keep the key active until it is revoked.
+                                </p>
+                                <p v-if="apiKeyForm.errors.expires_at" class="text-sm text-destructive">
+                                    {{ apiKeyForm.errors.expires_at }}
+                                </p>
+                            </div>
+
+                            <div class="flex justify-end">
+                                <Button type="submit" :disabled="apiKeyForm.processing">
+                                    <KeyRound class="mr-2 h-4 w-4" />
+                                    Create API Key
+                                </Button>
+                            </div>
+                        </form>
+
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-medium">Existing keys</h3>
+                                <p class="text-sm text-muted-foreground">{{ apiKeys.length }} total</p>
+                            </div>
+
+                            <div v-if="apiKeys.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                                No API keys created yet.
+                            </div>
+
+                            <div v-else class="space-y-3">
+                                <div
+                                    v-for="apiKey in apiKeys"
+                                    :key="apiKey.id"
+                                    class="rounded-lg border p-4"
+                                >
+                                    <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                                        <div class="space-y-2">
+                                            <div class="flex items-center gap-2">
+                                                <p class="font-medium">{{ apiKey.name }}</p>
+                                                <span
+                                                    class="rounded-full px-2 py-0.5 text-xs"
+                                                    :class="statusClass(apiKey.status)"
+                                                >
+                                                    {{ apiKey.status.charAt(0).toUpperCase() + apiKey.status.slice(1) }}
+                                                </span>
+                                            </div>
+                                            <p class="font-mono text-xs text-muted-foreground">{{ apiKey.key_prefix }}...</p>
+                                            <div class="flex flex-wrap gap-2">
+                                                <span
+                                                    v-for="ability in apiKey.abilities"
+                                                    :key="ability"
+                                                    class="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                                                >
+                                                    {{ ability }}
+                                                </span>
+                                            </div>
+                                            <div class="grid gap-1 text-sm text-muted-foreground">
+                                                <p>Created: {{ formatDate(apiKey.created_at) }}</p>
+                                                <p>Last used: {{ formatDate(apiKey.last_used_at) }}</p>
+                                                <p>Last IP: {{ apiKey.last_used_ip ?? 'Unknown' }}</p>
+                                                <p>Expires: {{ formatDate(apiKey.expires_at) }}</p>
+                                            </div>
+                                        </div>
+
+                                        <div v-if="apiKey.status === 'active'" class="flex shrink-0 gap-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                @click="rotateApiKey(apiKey.id)"
+                                            >
+                                                <RefreshCw class="mr-2 h-4 w-4" />
+                                                Rotate
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                @click="revokeApiKey(apiKey.id)"
+                                            >
+                                                <Trash2 class="mr-2 h-4 w-4" />
+                                                Revoke
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             <!-- Sidebar summary -->
@@ -198,6 +437,12 @@ function savePassword() {
                             <p class="text-muted-foreground">Member since</p>
                             <p class="font-medium">
                                 {{ new Date(user.created_at).toLocaleDateString() }}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-muted-foreground">Active API keys</p>
+                            <p class="font-medium">
+                                {{ apiKeys.filter((apiKey) => !apiKey.revoked_at).length }}
                             </p>
                         </div>
                     </CardContent>

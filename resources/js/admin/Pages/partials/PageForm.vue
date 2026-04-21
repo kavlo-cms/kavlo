@@ -1,21 +1,23 @@
 <script setup lang="ts">
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import { Trash2 } from 'lucide-vue-next';
-import { watch } from 'vue';
+import { ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import admin from '@/routes/admin';
 
 interface PageType {
     type: string;
     label: string;
     view: string;
+    source?: string;
+    source_label?: string;
 }
 
 interface PageData {
@@ -58,10 +60,10 @@ function slugify(value: string) {
         .replace(/-+/g, '-');
 }
 
-let slugTouched = isEditing;
+const slugTouched = ref(isEditing);
 
 watch(() => form.title, (val) => {
-    if (!slugTouched) {
+    if (!slugTouched.value) {
         form.slug = slugify(val);
     }
 });
@@ -143,7 +145,9 @@ function deletePage() {
                                     :key="pt.type"
                                     :value="pt.type"
                                 >
-                                    {{ pt.label }}
+                                    {{ pt.label }} ({{
+                                        pt.source_label ?? pt.source ?? 'Core'
+                                    }})
                                 </SelectItem>
                             </SelectContent>
                         </Select>

@@ -7,9 +7,9 @@ use Illuminate\Console\Command;
 
 class CacheContentRoutes extends Command
 {
-    protected $signature = 'cms:routes-cache {--clear : Remove the cached manifest instead of rebuilding it}';
+    protected $signature = 'kavlo:routes-cache {--clear : Remove the cached manifest instead of rebuilding it}';
 
-    protected $description = 'Build or clear the cached CMS content route manifest';
+    protected $description = 'Build or clear the cached Kavlo content route manifest';
 
     public function handle(ContentRouteRegistry $registry): int
     {

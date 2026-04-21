@@ -1,1 +1,1 @@
-{"label":"Heading","description":"H1–H4 heading with optional alignment","group":"text","icon":"Heading1","source":"core"}
+{"$schema":"../../resources/schemas/block.schema.json","label":"Heading","description":"H1–H4 heading with optional alignment","group":"text","icon":"Heading1","source":"core"}

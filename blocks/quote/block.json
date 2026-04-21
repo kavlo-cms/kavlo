@@ -1,1 +1,1 @@
-{"label":"Quote","description":"Blockquote with author attribution","group":"text","icon":"Quote","source":"core"}
+{"$schema":"../../resources/schemas/block.schema.json","label":"Quote","description":"Blockquote with author attribution","group":"text","icon":"Quote","source":"core"}

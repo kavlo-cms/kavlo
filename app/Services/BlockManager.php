@@ -16,7 +16,7 @@ class BlockManager
         ]);
 
         $blocks = [];
-        $seen   = [];
+        $seen = [];
 
         foreach ($paths as $path) {
             if (! File::exists($path)) {
@@ -32,15 +32,15 @@ class BlockManager
 
                 $seen[$type] = true;
 
-                $schema   = [];
+                $schema = [];
                 $jsonPath = "{$dir}/block.json";
 
                 if (File::exists($jsonPath)) {
-                    $schema = json_decode(File::get($jsonPath), true) ?? [];
+                    $schema = app(BlockManifest::class)->loadFromPath($jsonPath);
                 }
 
                 $blocks[] = array_merge([
-                    'type'  => $type,
+                    'type' => $type,
                     'label' => Str::title(str_replace(['-', '_'], ' ', $type)),
                 ], $schema);
             }

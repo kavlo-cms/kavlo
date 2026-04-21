@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Plugin;
 use App\Services\PluginManager;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
 
 class PluginsController extends Controller
 {
@@ -22,12 +24,35 @@ class PluginsController extends Controller
         ]);
     }
 
+    public function upload(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'archive' => 'required|file|max:51200',
+        ]);
+
+        try {
+            $plugin = $this->manager->installFromArchive($validated['archive']);
+        } catch (RuntimeException $exception) {
+            return back()->withErrors(['archive' => $exception->getMessage()]);
+        }
+
+        return back()->with('success', "\"{$plugin->name}\" uploaded. Activate it to run its installer.");
+    }
+
     public function toggle(Plugin $plugin): RedirectResponse
     {
-        $plugin->update(['is_enabled' => !$plugin->is_enabled]);
+        if ($plugin->is_enabled) {
+            $this->manager->disable($plugin);
 
-        $state = $plugin->is_enabled ? 'enabled' : 'disabled';
+            return back()->with('success', "\"{$plugin->name}\" disabled.");
+        }
 
-        return back()->with('success', "\"{$plugin->name}\" {$state}. Restart required for changes to take effect.");
+        try {
+            $this->manager->enable($plugin);
+        } catch (RuntimeException $exception) {
+            return back()->withErrors(['plugin' => $exception->getMessage()]);
+        }
+
+        return back()->with('success', "\"{$plugin->name}\" enabled and migrations applied.");
     }
 }

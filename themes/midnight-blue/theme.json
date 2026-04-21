@@ -1,4 +1,5 @@
 {
+    "$schema": "../../resources/schemas/theme.schema.json",
     "name": "Midnight Blue",
     "slug": "midnight-blue",
     "version": "1.0.0",

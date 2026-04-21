@@ -1,0 +1,71 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "cms://schemas/theme.schema.json",
+    "title": "CMS Theme Manifest",
+    "type": "object",
+    "required": ["name", "slug"],
+    "additionalProperties": false,
+    "properties": {
+        "$schema": {
+            "type": "string"
+        },
+        "name": {
+            "type": "string",
+            "minLength": 1
+        },
+        "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "version": {
+            "type": "string",
+            "minLength": 1
+        },
+        "description": {
+            "type": "string"
+        },
+        "author": {
+            "type": "string"
+        },
+        "preview": {
+            "type": "string"
+        },
+        "canvas": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "class": {
+                    "type": "string"
+                },
+                "font": {
+                    "type": ["string", "null"]
+                }
+            }
+        },
+        "pageTypes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["type", "label", "view"],
+                "additionalProperties": false,
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                    },
+                    "label": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "view": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "description": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

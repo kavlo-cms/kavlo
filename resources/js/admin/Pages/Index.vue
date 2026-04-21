@@ -103,6 +103,7 @@ provide('markDirty', autoSave);
 // ── Bulk actions ─────────────────────────────────────────────────────────────
 
 const bulkProcessing = ref(false);
+const creating = ref(false);
 
 function bulkAction(action: 'delete' | 'publish' | 'unpublish') {
     if (!selectedIds.value.size) return;
@@ -111,6 +112,16 @@ function bulkAction(action: 'delete' | 'publish' | 'unpublish') {
     bulkProcessing.value = true;
     router.post('/admin/pages/bulk', { action, ids: [...selectedIds.value] }, {
         onFinish: () => { bulkProcessing.value = false; selectedIds.value = new Set(); },
+    });
+}
+
+function createPage() {
+    if (creating.value) return;
+
+    router.post('/admin/pages/quick-create', {}, {
+        preserveScroll: true,
+        onStart: () => { creating.value = true; },
+        onFinish: () => { creating.value = false; },
     });
 }
 </script>
@@ -145,11 +156,10 @@ function bulkAction(action: 'delete' | 'publish' | 'unpublish') {
                         <CheckCircle2 class="h-3.5 w-3.5 text-green-500" /> Saved
                     </span>
                 </Transition>
-                <Button as-child>
-                    <Link href="/admin/pages/create">
-                        <FilePlus class="mr-2 h-4 w-4" />
-                        New Page
-                    </Link>
+                <Button :disabled="creating" @click="createPage">
+                    <Loader2 v-if="creating" class="mr-2 h-4 w-4 animate-spin" />
+                    <FilePlus v-else class="mr-2 h-4 w-4" />
+                    New Page
                 </Button>
             </div>
         </div>
@@ -182,11 +192,10 @@ function bulkAction(action: 'delete' | 'publish' | 'unpublish') {
         <!-- Tree -->
         <div v-if="items.length === 0" class="flex min-h-48 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
             No pages yet.
-            <Link href="/admin/pages/create" class="ml-1 underline">Create one.</Link>
+            <button type="button" class="ml-1 underline" :disabled="creating" @click="createPage">Create one.</button>
         </div>
 
         <PageTreeList v-else v-model="items" />
     </AppLayout>
 </template>
-
 

@@ -1,1 +1,1 @@
-{"label":"Button","description":"Call-to-action button with link","group":"components","icon":"MousePointer2","source":"core"}
+{"$schema":"../../resources/schemas/block.schema.json","label":"Button","description":"Call-to-action button with link","group":"components","icon":"MousePointer2","source":"core"}

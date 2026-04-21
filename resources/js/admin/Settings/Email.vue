@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { useForm, router } from '@inertiajs/vue3';
 import { Mail, Save, Send } from 'lucide-vue-next';
+import { ref } from 'vue';
+import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import AppLayout from '@/layouts/AppLayout.vue';
 import admin from '@/routes/admin';
 import type { BreadcrumbItem } from '@/types';
-import { toast } from 'vue-sonner';
 
 interface EmailSettings {
     mail_mailer?: string;
@@ -20,11 +20,27 @@ interface EmailSettings {
     mail_encryption?: string;
     mail_from_address?: string;
     mail_from_name?: string;
+    mail_test_template_id?: string;
+}
+
+interface TemplateOption {
+    value: string;
+    label: string;
+}
+
+interface DeliveryStatus {
+    connection: string;
+    queue: string;
+    async: boolean;
+    after_commit: boolean;
+    failed_jobs: number | null;
 }
 
 const props = defineProps<{
     settings: EmailSettings;
     hasPassword: boolean;
+    availableTemplates: TemplateOption[];
+    delivery: DeliveryStatus;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -43,10 +59,11 @@ const form = useForm({
     mail_encryption:   props.settings.mail_encryption   ?? 'tls',
     mail_from_address: props.settings.mail_from_address ?? '',
     mail_from_name:    props.settings.mail_from_name    ?? '',
+    mail_test_template_id: props.settings.mail_test_template_id ?? '__plain__',
 });
 
 function save() {
-    const data: Record<string, string> = {
+    const data: Record<string, string | null> = {
         mail_mailer:       form.mail_mailer,
         mail_host:         form.mail_host,
         mail_port:         form.mail_port,
@@ -54,6 +71,7 @@ function save() {
         mail_encryption:   form.mail_encryption,
         mail_from_address: form.mail_from_address,
         mail_from_name:    form.mail_from_name,
+        mail_test_template_id: form.mail_test_template_id === '__plain__' ? null : form.mail_test_template_id,
     };
 
     if (passwordChanged.value && form.mail_password !== '') {
@@ -64,6 +82,7 @@ function save() {
         preserveScroll: true,
         onSuccess: () => {
             toast.success('Email settings saved.');
+
             if (passwordChanged.value) {
                 form.mail_password = '';
                 passwordChanged.value = false;
@@ -235,6 +254,34 @@ function sendTestEmail() {
                     </CardContent>
                 </Card>
 
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Email Templates</CardTitle>
+                        <CardDescription>Select reusable builder-backed templates for outgoing system mail.</CardDescription>
+                    </CardHeader>
+                    <CardContent class="space-y-4">
+                        <div class="space-y-1.5">
+                            <Label for="mail_test_template_id">Test Email Template</Label>
+                            <Select v-model="form.mail_test_template_id">
+                                <SelectTrigger id="mail_test_template_id">
+                                    <SelectValue placeholder="Use plain-text fallback" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="__plain__">Use plain-text fallback</SelectItem>
+                                    <SelectItem v-for="template in availableTemplates" :key="template.value" :value="template.value">
+                                        {{ template.label }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p class="text-xs text-muted-foreground">Used by the test email action below. Form notifications choose their own template inside each form.</p>
+                        </div>
+
+                        <Button variant="outline" as-child>
+                            <a href="/admin/email-templates">Manage Email Templates</a>
+                        </Button>
+                    </CardContent>
+                </Card>
+
             </div>
 
             <!-- Side column -->
@@ -252,6 +299,29 @@ function sendTestEmail() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
+                        <dl class="mb-4 space-y-1 text-sm text-muted-foreground">
+                            <div class="flex justify-between gap-3">
+                                <dt>Queue connection</dt>
+                                <dd class="font-medium text-foreground">{{ props.delivery.connection }}</dd>
+                            </div>
+                            <div class="flex justify-between gap-3">
+                                <dt>Queue name</dt>
+                                <dd class="font-medium text-foreground">{{ props.delivery.queue }}</dd>
+                            </div>
+                            <div class="flex justify-between gap-3">
+                                <dt>Delivery mode</dt>
+                                <dd class="font-medium text-foreground">{{ props.delivery.async ? 'Asynchronous' : 'Inline / sync' }}</dd>
+                            </div>
+                            <div class="flex justify-between gap-3">
+                                <dt>Dispatch after commit</dt>
+                                <dd class="font-medium text-foreground">{{ props.delivery.after_commit ? 'Enabled' : 'Disabled' }}</dd>
+                            </div>
+                            <div v-if="props.delivery.failed_jobs !== null" class="flex justify-between gap-3">
+                                <dt>Failed jobs</dt>
+                                <dd class="font-medium text-foreground">{{ props.delivery.failed_jobs }}</dd>
+                            </div>
+                        </dl>
+
                         <Button
                             variant="outline"
                             class="w-full"

@@ -8,9 +8,9 @@ use App\Models\MenuItem;
 use App\Models\Page;
 use App\Models\Theme;
 use App\Services\ContentRouteRegistry;
+use App\Services\ThemeManifest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -48,9 +48,9 @@ class MenuController extends Controller
         $themeConfig = $this->readThemeConfig($themeSlug);
 
         return Inertia::render('Menus/Edit', [
-            'menu'        => $menu,
-            'items'       => $this->buildTree($menu->id),
-            'pages'       => $pages,
+            'menu' => $menu,
+            'items' => $this->buildTree($menu->id),
+            'pages' => $pages,
             'themeConfig' => $themeConfig,
         ]);
     }
@@ -58,17 +58,14 @@ class MenuController extends Controller
     public function update(Request $request, Menu $menu): RedirectResponse
     {
         $request->validate([
-            'name'  => 'required|string|max:255',
-            'slug'  => 'required|string|max:255|unique:menus,slug,' . $menu->id,
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:menus,slug,'.$menu->id,
             'items' => 'present|array',
         ]);
 
         $menu->update($request->only('name', 'slug'));
         $this->syncItems($menu->id, $request->items, null);
 
-        Cache::forget('cms_menu_html_' . $menu->slug);
-        // Also clear any slug the menu previously had (before potential rename)
-        Cache::flush(); // simpler: flush all cache entries when menu is saved
         app(ContentRouteRegistry::class)->forget();
 
         return back()->with('success', 'Menu saved.');
@@ -87,10 +84,8 @@ class MenuController extends Controller
     private function readThemeConfig(string $slug): array
     {
         $path = base_path("themes/{$slug}/theme.json");
-        if (! file_exists($path)) {
-            return [];
-        }
-        return json_decode(file_get_contents($path), true) ?? [];
+
+        return app(ThemeManifest::class)->loadFromPath($path);
     }
 
     private function buildTree(int $menuId): array
@@ -126,16 +121,16 @@ class MenuController extends Controller
 
         foreach ($items as $itemData) {
             $item = MenuItem::create([
-                'menu_id'   => $menuId,
-                'label'     => $itemData['label'] ?? 'Item',
-                'url'       => $itemData['url'] ?? null,
-                'page_id'   => $itemData['page_id'] ?? null,
-                'target'    => $itemData['target'] ?? '_self',
+                'menu_id' => $menuId,
+                'label' => $itemData['label'] ?? 'Item',
+                'url' => $itemData['url'] ?? null,
+                'page_id' => $itemData['page_id'] ?? null,
+                'target' => $itemData['target'] ?? '_self',
                 'parent_id' => $parentId,
-                'order'     => $order++,
+                'order' => $order++,
             ]);
 
-            if (!empty($itemData['children'])) {
+            if (! empty($itemData['children'])) {
                 $childOrder = 0;
                 $this->syncItems($menuId, $itemData['children'], $item->id, $childOrder);
             }

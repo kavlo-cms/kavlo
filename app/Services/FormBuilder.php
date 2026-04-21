@@ -3,12 +3,12 @@
 namespace App\Services;
 
 use App\Facades\Hook;
+use App\Mail\KavloTemplateMail;
 use App\Models\Form;
 use App\Models\FormSubmission;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -186,6 +186,12 @@ class FormBuilder
                         'type' => 'email',
                         'placeholder' => 'you@example.com',
                     ],
+                    [
+                        'key' => 'email_template_id',
+                        'label' => 'Notification Template',
+                        'type' => 'select',
+                        'options' => app(EmailTemplateBuilder::class)->templateOptionsFor(EmailTemplateBuilder::FORM_NOTIFICATION_CONTEXT),
+                    ],
                 ],
                 'handler' => function (Form $form, array $data, Request $request, array $config): array {
                     FormSubmission::create([
@@ -198,16 +204,28 @@ class FormBuilder
                     $notifyEmail = trim((string) ($config['notify_email'] ?? ''));
 
                     if ($notifyEmail !== '') {
-                        $body = "New submission for form: {$form->name}\n\n";
+                        $mailDelivery = app(KavloMailDelivery::class);
+                        $templateBuilder = app(EmailTemplateBuilder::class);
+                        $templateRenderer = app(EmailTemplateRenderer::class);
+                        $template = $templateBuilder->findTemplateForContext($config['email_template_id'] ?? null, EmailTemplateBuilder::FORM_NOTIFICATION_CONTEXT);
 
-                        foreach (self::submissionFields($form) as $field) {
-                            $body .= "{$field['label']}: ".self::formatSubmissionValue($data[$field['key']] ?? null)."\n";
+                        if ($template) {
+                            $mailDelivery->queue(
+                                $notifyEmail,
+                                new KavloTemplateMail($templateRenderer->render(
+                                    $template,
+                                    $templateBuilder->formNotificationData($form, $data, $notifyEmail),
+                                )),
+                            );
+                        } else {
+                            $body = "New submission for form: {$form->name}\n\n";
+
+                            foreach (self::submissionFields($form) as $field) {
+                                $body .= "{$field['label']}: ".self::formatSubmissionValue($data[$field['key']] ?? null)."\n";
+                            }
+
+                            $mailDelivery->queuePlainText($notifyEmail, "New form submission: {$form->name}", $body);
                         }
-
-                        Mail::raw($body, function ($message) use ($form, $notifyEmail) {
-                            $message->to($notifyEmail)
-                                ->subject("New form submission: {$form->name}");
-                        });
                     }
 
                     return [

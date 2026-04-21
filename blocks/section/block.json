@@ -1,1 +1,1 @@
-{"label":"Section","description":"Container that holds other blocks","group":"layout","icon":"Square","source":"core"}
+{"$schema":"../../resources/schemas/block.schema.json","label":"Section","description":"Container that holds other blocks","group":"layout","icon":"Square","source":"core"}

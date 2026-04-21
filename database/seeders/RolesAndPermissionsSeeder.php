@@ -20,6 +20,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit pages',
             'delete pages',
             'publish pages',
+            'restore page revisions',
 
             // Media
             'view media',
@@ -30,17 +31,42 @@ class RolesAndPermissionsSeeder extends Seeder
             'view menus',
             'manage menus',
 
+            // Forms
+            'view forms',
+            'manage forms',
+
+            // Email templates
+            'view email templates',
+            'manage email templates',
+
+            // Redirects
+            'view redirects',
+            'manage redirects',
+
             // Settings
             'view settings',
             'manage settings',
+            'view scripts',
+            'manage scripts',
+            'view themes',
+            'manage themes',
+            'view plugins',
+            'manage plugins',
 
             // Users
             'view users',
             'manage users',
 
-            // Plugins & Themes
-            'manage plugins',
-            'manage themes',
+            // DataHub
+            'view datahub',
+            'preview datahub',
+
+            // System
+            'view analytics',
+            'view activity log',
+            'manage backups',
+            'manage cache',
+            'manage maintenance',
         ];
 
         foreach ($permissions as $permission) {
@@ -54,12 +80,20 @@ class RolesAndPermissionsSeeder extends Seeder
             'view media', 'upload media',
         ]);
 
+        // User — frontend/customer/forum account with no admin access
+        $user = Role::firstOrCreate(['name' => 'user']);
+        $user->syncPermissions([]);
+
         // Editor — everything content-related + publish
         $editor = Role::firstOrCreate(['name' => 'editor']);
         $editor->syncPermissions([
-            'view pages', 'create pages', 'edit pages', 'delete pages', 'publish pages',
+            'view pages', 'create pages', 'edit pages', 'delete pages', 'publish pages', 'restore page revisions',
             'view media', 'upload media', 'delete media',
             'view menus', 'manage menus',
+            'view forms', 'manage forms',
+            'view email templates', 'manage email templates',
+            'view redirects', 'manage redirects',
+            'view datahub', 'preview datahub',
         ]);
 
         // Admin — everything except managing other users' roles

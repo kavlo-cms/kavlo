@@ -2,17 +2,17 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Theme;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use App\Models\Theme;
 
-use function Laravel\Prompts\text;
-use function Laravel\Prompts\select;
 use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\select;
+use function Laravel\Prompts\text;
 
 #[Signature('make:block {name?} {theme?}')]
 #[Description('Creates a new block (Global or Theme-specific)')]
@@ -30,7 +30,8 @@ class CreateBlockCommand extends Command implements PromptsForMissingInput
             : base_path("themes/{$theme}/blocks/{$name}");
 
         if (File::exists($basePath)) {
-            $this->error("Block '{$name}' already exists in " . ($isGlobal ? 'global blocks' : "theme '{$theme}'") . "!");
+            $this->error("Block '{$name}' already exists in ".($isGlobal ? 'global blocks' : "theme '{$theme}'").'!');
+
             return;
         }
 
@@ -52,19 +53,32 @@ class CreateBlockCommand extends Command implements PromptsForMissingInput
             json_encode($packageJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
         );
 
+        File::put(
+            "{$basePath}/block.json",
+            json_encode([
+                '$schema' => $isGlobal
+                    ? '../../resources/schemas/block.schema.json'
+                    : '../../../../resources/schemas/block.schema.json',
+                'label' => Str::headline($name),
+                'description' => '',
+                'group' => 'components',
+                'icon' => 'Square',
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+        );
+
         // 1. Create render.blade.php
         File::put("{$basePath}/render.blade.php", "\n<div class='block-{$name}'>\n    {{ \$data['content'] ?? '' }}\n</div>");
 
         // 2. Create Editor.vue
         File::put("{$basePath}/Editor.vue", $this->getVueTemplate($name));
 
-        $location = $isGlobal ? "Global Library" : "Theme '{$theme}'";
+        $location = $isGlobal ? 'Global Library' : "Theme '{$theme}'";
         $this->info("Block '{$name}' created successfully in {$location}.");
 
         if (confirm("Run 'npm install' to link the new workspace?", true)) {
-            $this->output->write("Linking workspaces...");
+            $this->output->write('Linking workspaces...');
             shell_exec('npm install');
-            $this->info(" Done!");
+            $this->info(' Done!');
         }
     }
 
@@ -105,6 +119,7 @@ class CreateBlockCommand extends Command implements PromptsForMissingInput
             $label = isset($registeredThemes[$slug])
                 ? "{$registeredThemes[$slug]} ($slug) ✅"
                 : "$slug [Not Registered] ⚠️";
+
             return [$slug => $label];
         })->toArray();
 
@@ -112,8 +127,8 @@ class CreateBlockCommand extends Command implements PromptsForMissingInput
         $options = ['global' => '🌎 Global Library (Shared)'] + $options;
 
         return [
-            'name' => fn() => text('What is the name of the block?', placeholder: 'e.g. Hero Section', required: true),
-            'theme' => fn() => select(
+            'name' => fn () => text('What is the name of the block?', placeholder: 'e.g. Hero Section', required: true),
+            'theme' => fn () => select(
                 label: 'Where should this block be stored?',
                 options: $options,
                 default: 'global'

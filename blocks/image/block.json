@@ -1,1 +1,1 @@
-{"label":"Image","description":"Responsive image with optional caption","group":"media","icon":"Image","source":"core"}
+{"$schema":"../../resources/schemas/block.schema.json","label":"Image","description":"Responsive image with optional caption","group":"media","icon":"Image","source":"core"}

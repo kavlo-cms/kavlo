@@ -22,22 +22,20 @@ class GeneralController extends Controller
 
         return Inertia::render('Settings/Index', [
             'settings' => $settings,
-            'pages'    => $pages,
+            'pages' => $pages,
         ]);
     }
 
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'site_name'         => ['required', 'string', 'max:255'],
-            'site_tagline'      => ['nullable', 'string', 'max:255'],
-            'admin_email'       => ['nullable', 'email', 'max:255'],
+            'site_name' => ['required', 'string', 'max:255'],
+            'site_tagline' => ['nullable', 'string', 'max:255'],
+            'admin_email' => ['nullable', 'email', 'max:255'],
             'meta_title_format' => ['nullable', 'string', 'max:255'],
-            'meta_description'  => ['nullable', 'string', 'max:500'],
-            'homepage_id'       => ['nullable', 'integer', 'exists:pages,id'],
-            'favicon'           => ['nullable', 'string', 'max:500'],
-            'head_scripts'      => ['nullable', 'string'],
-            'body_scripts'      => ['nullable', 'string'],
+            'meta_description' => ['nullable', 'string', 'max:500'],
+            'homepage_id' => ['nullable', 'integer', 'exists:pages,id'],
+            'favicon' => ['nullable', 'string', 'max:500'],
         ]);
 
         Setting::setMany($validated);

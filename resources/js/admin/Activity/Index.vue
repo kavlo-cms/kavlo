@@ -13,8 +13,11 @@ interface ActivityItem {
     description: string;
     subject_type: string | null;
     subject_id: number | null;
+    subject_label: string | null;
+    target: string | null;
+    route_name: string | null;
+    changed_fields: string[];
     causer: { id: number; name: string } | null;
-    properties: Record<string, unknown>;
     created_at: string;
 }
 
@@ -48,12 +51,11 @@ function timeAgo(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString();
 }
 
-function getChanges(item: ActivityItem): string[] {
-    const attrs = item.properties?.attributes as Record<string, unknown> | undefined;
-    const old   = item.properties?.old as Record<string, unknown> | undefined;
-    if (!attrs && !old) return [];
-    const keys = new Set([...Object.keys(attrs ?? {}), ...Object.keys(old ?? {})]);
-    return Array.from(keys).slice(0, 4);
+function subjectText(item: ActivityItem): string {
+    if (item.subject_label) return item.subject_label;
+    if (item.target) return item.target;
+    if (item.subject_type) return `${item.subject_type}${item.subject_id ? ` #${item.subject_id}` : ''}`;
+    return '—';
 }
 </script>
 
@@ -90,18 +92,19 @@ function getChanges(item: ActivityItem): string[] {
                             </Badge>
                         </td>
                         <td class="px-4 py-2.5 text-xs">
-                            <span v-if="item.subject_type" class="font-medium">{{ item.subject_type }}</span>
-                            <span v-if="item.subject_id" class="text-muted-foreground"> #{{ item.subject_id }}</span>
-                            <span v-if="!item.subject_type" class="text-muted-foreground">—</span>
+                            <div class="font-medium">{{ subjectText(item) }}</div>
+                            <div v-if="item.route_name" class="text-muted-foreground">
+                                {{ item.route_name }}
+                            </div>
                         </td>
                         <td class="px-4 py-2.5">
                             <div class="flex flex-wrap gap-1">
                                 <span
-                                    v-for="key in getChanges(item)"
+                                    v-for="key in item.changed_fields"
                                     :key="key"
                                     class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs"
                                 >{{ key }}</span>
-                                <span v-if="getChanges(item).length === 0" class="text-xs text-muted-foreground">—</span>
+                                <span v-if="item.changed_fields.length === 0" class="text-xs text-muted-foreground">—</span>
                             </div>
                         </td>
                         <td class="px-4 py-2.5 text-xs text-muted-foreground">

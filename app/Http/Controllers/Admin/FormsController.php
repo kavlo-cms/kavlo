@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Form;
+use App\Services\BuilderBlockPayload;
 use App\Services\ContentRouteRegistry;
 use App\Services\FormBuilder;
 use Illuminate\Http\RedirectResponse;
@@ -14,6 +15,10 @@ use Inertia\Response;
 
 class FormsController extends Controller
 {
+    public function __construct(
+        private readonly BuilderBlockPayload $blockPayload,
+    ) {}
+
     public function index(): Response
     {
         $forms = Form::withCount(['submissions'])
@@ -56,6 +61,12 @@ class FormsController extends Controller
             'submission_action' => ['nullable', 'string', Rule::in($actionKeys)],
             'action_config' => ['nullable', 'array'],
         ]);
+
+        $schemaErrors = $this->blockPayload->validateStructure($validated['blocks'] ?? []);
+
+        if ($schemaErrors !== []) {
+            return back()->withErrors(['blocks' => $schemaErrors[0]])->withInput();
+        }
 
         $blockErrors = FormBuilder::validateBlocks($validated['blocks'] ?? []);
 
@@ -110,6 +121,12 @@ class FormsController extends Controller
             'submission_action' => ['nullable', 'string', Rule::in($actionKeys)],
             'action_config' => ['nullable', 'array'],
         ]);
+
+        $schemaErrors = $this->blockPayload->validateStructure($validated['blocks'] ?? []);
+
+        if ($schemaErrors !== []) {
+            return back()->withErrors(['blocks' => $schemaErrors[0]])->withInput();
+        }
 
         $blockErrors = FormBuilder::validateBlocks($validated['blocks'] ?? []);
 
