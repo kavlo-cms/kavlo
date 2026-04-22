@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, defineAsyncComponent, ref } from 'vue';
 import { Code, Pencil, Plus, Save, Trash2 } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,10 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
+
+const MonacoCodeEditor = defineAsyncComponent(
+    () => import('@/block-kit/components/MonacoCodeEditor.vue'),
+);
 
 interface SiteScript {
     id: number;
@@ -88,6 +92,15 @@ const form = useForm<{
 const selectedScript = computed(
     () => props.scripts.find((script) => script.id === editingId.value) ?? null,
 );
+const inlineContentLanguage = computed<'html' | 'javascript'>(() => {
+    const content = form.inline_content.trim();
+
+    if (content === '') {
+        return 'javascript';
+    }
+
+    return /<\s*\/?\s*[a-z!]/i.test(content) ? 'html' : 'javascript';
+});
 
 const placementLabel = (value: string) =>
     props.placementOptions.find((option) => option.value === value)?.label ??
@@ -450,16 +463,31 @@ function onFileChange(event: Event) {
                     </div>
 
                     <div v-if="form.source_type === 'inline'" class="space-y-2">
-                        <Label for="script-inline"
-                            >Inline Script or Embed Snippet</Label
+                        <Label>Inline Script or Embed Snippet</Label>
+                        <div
+                            class="overflow-hidden rounded-lg border bg-background"
                         >
-                        <Textarea
-                            id="script-inline"
-                            v-model="form.inline_content"
-                            rows="10"
-                            class="font-mono text-xs"
-                            placeholder="console.log('hello');"
-                        />
+                            <div
+                                class="flex items-center gap-2 border-b bg-muted/40 px-4 py-2 text-xs text-muted-foreground"
+                            >
+                                <Code class="h-3.5 w-3.5" />
+                                {{
+                                    inlineContentLanguage === 'html'
+                                        ? 'HTML/embed mode'
+                                        : 'JavaScript mode'
+                                }}
+                            </div>
+                            <MonacoCodeEditor
+                                id="script-inline"
+                                :model-value="form.inline_content"
+                                :language="inlineContentLanguage"
+                                class="min-h-[320px]"
+                                aria-label="Inline script editor"
+                                @update:model-value="
+                                    (value) => (form.inline_content = value)
+                                "
+                            />
+                        </div>
                         <p class="text-xs text-muted-foreground">
                             Paste JavaScript code or a full embed snippet that
                             already contains its own

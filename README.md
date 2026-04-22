@@ -98,6 +98,7 @@ Custom blocks can import a supported authoring surface from `@/block-kit` instea
 import {
     BlockFieldInput,
     BlockInlineText,
+    MonacoCodeEditor,
     commonTextColorField,
     commonTextGradientField,
     commonWidthField,
@@ -107,10 +108,11 @@ import {
 } from '@/block-kit';
 ```
 
-- **Components:** `BlockFieldInput`, `BlockColorInput`, `BlockGradientInput`, `BlockMediaInput`, `BlockPageLinkInput`, `BlockInlineText`
+- **Components:** `BlockFieldInput`, `BlockColorInput`, `BlockGradientInput`, `BlockMediaInput`, `BlockPageLinkInput`, `BlockInlineText`, `MonacoCodeEditor`
 - **Schema helpers:** `textField`, `textareaField`, `urlField`, `numberField`, `selectField`, `toggleField`, `mediaField`, `pageLinkField`, `colorField`, `gradientField`
 - **Shared presets:** `commonWidthField`, `commonTextColorField`, `commonButtonColorField`, `commonTextGradientField`, `commonButtonGradientField`, `commonHeroHeadlineGradientField`
 - **Preview helpers:** exported from `@/block-kit` for block width, text tone, gradient text/background styles, button styles, and shared presets
+- **Code editing:** `MonacoCodeEditor` is the reusable code editor surface for HTML/JavaScript authoring in extension UIs, including block, plugin, and theme development
 
 ## Notes
 

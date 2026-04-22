@@ -19,8 +19,8 @@ import {
 import { defineAsyncComponent, ref, watch } from 'vue';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const HtmlCodeEditor = defineAsyncComponent(
-    () => import('./HtmlCodeEditor.vue'),
+const MonacoCodeEditor = defineAsyncComponent(
+    () => import('@/block-kit/components/MonacoCodeEditor.vue'),
 );
 
 const props = defineProps<{
@@ -427,8 +427,10 @@ async function copySnippet(value: string) {
                                 <Code2 class="h-3.5 w-3.5" />
                                 HTML source
                             </div>
-                            <HtmlCodeEditor
+                            <MonacoCodeEditor
                                 :model-value="currentContent"
+                                language="html"
+                                class="rounded-b-lg"
                                 @update:model-value="updateCodeContent"
                             />
                         </div>

@@ -2,11 +2,24 @@
 import type { editor as MonacoEditor } from 'monaco-editor';
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
 import HtmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
+import TsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
-const props = defineProps<{
-    modelValue: string;
-}>();
+const loadMonaco = () => import('monaco-editor');
+
+const props = withDefaults(
+    defineProps<{
+        modelValue: string;
+        language?: 'html' | 'javascript' | 'typescript';
+        wordWrap?: 'on' | 'off';
+        tabSize?: number;
+    }>(),
+    {
+        language: 'html',
+        wordWrap: 'on',
+        tabSize: 2,
+    },
+);
 
 const emit = defineEmits<{
     'update:modelValue': [value: string];
@@ -15,7 +28,10 @@ const emit = defineEmits<{
 const root = ref<HTMLElement | null>(null);
 
 let editor: MonacoEditor.IStandaloneCodeEditor | null = null;
+let model: MonacoEditor.ITextModel | null = null;
+let monaco: Awaited<ReturnType<typeof loadMonaco>> | null = null;
 let syncing = false;
+let themeObserver: MutationObserver | null = null;
 
 function theme(): 'vs' | 'vs-dark' {
     return document.documentElement.classList.contains('dark')
@@ -23,11 +39,7 @@ function theme(): 'vs' | 'vs-dark' {
         : 'vs';
 }
 
-async function mountEditor() {
-    if (!root.value || editor) {
-        return;
-    }
-
+function installWorkers() {
     Object.assign(globalThis, {
         MonacoEnvironment: {
             getWorker(_: string, label: string) {
@@ -39,24 +51,40 @@ async function mountEditor() {
                     return new HtmlWorker();
                 }
 
+                if (label === 'javascript' || label === 'typescript') {
+                    return new TsWorker();
+                }
+
                 return new EditorWorker();
             },
         },
     });
+}
 
-    const monaco = await import('monaco-editor');
+function syncTheme() {
+    monaco?.editor.setTheme(theme());
+}
+
+async function mountEditor() {
+    if (!root.value || editor) {
+        return;
+    }
+
+    installWorkers();
+
+    monaco = await loadMonaco();
+    model = monaco.editor.createModel(props.modelValue ?? '', props.language);
 
     editor = monaco.editor.create(root.value, {
-        value: props.modelValue ?? '',
-        language: 'html',
+        model,
         theme: theme(),
         automaticLayout: true,
         minimap: { enabled: false },
         fontSize: 14,
         lineNumbersMinChars: 3,
         scrollBeyondLastLine: false,
-        tabSize: 2,
-        wordWrap: 'on',
+        tabSize: props.tabSize,
+        wordWrap: props.wordWrap,
     });
 
     editor.onDidChangeModelContent(() => {
@@ -87,19 +115,58 @@ watch(
     },
 );
 
+watch(
+    () => props.language,
+    (language) => {
+        if (!monaco || !model) {
+            return;
+        }
+
+        monaco.editor.setModelLanguage(model, language);
+    },
+);
+
+watch(
+    () => props.wordWrap,
+    (wordWrap) => {
+        editor?.updateOptions({ wordWrap });
+    },
+);
+
+watch(
+    () => props.tabSize,
+    (tabSize) => {
+        model?.updateOptions({ tabSize });
+    },
+);
+
 onMounted(() => {
     void mountEditor();
+
+    themeObserver = new MutationObserver(() => {
+        syncTheme();
+    });
+
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class'],
+    });
 });
 
 onBeforeUnmount(() => {
+    themeObserver?.disconnect();
+    themeObserver = null;
     editor?.dispose();
     editor = null;
+    model?.dispose();
+    model = null;
 });
 </script>
 
 <template>
     <div
         ref="root"
-        class="h-full min-h-0 w-full overflow-hidden rounded-b-lg bg-background"
+        class="h-full min-h-0 w-full overflow-hidden bg-background"
+        v-bind="$attrs"
     />
 </template>
