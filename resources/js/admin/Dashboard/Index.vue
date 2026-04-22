@@ -126,13 +126,19 @@ function healthIcon(check: HealthCheck) {
     <AppLayout :breadcrumbs="breadcrumbs">
         <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
 
-        <Alert v-if="props.updateCheck.available" class="border-primary/30 bg-primary/5">
+        <Alert
+            v-if="props.updateCheck.available"
+            class="border-primary/30 bg-primary/5"
+        >
             <AlertTriangle class="size-4 text-primary" />
             <AlertTitle>Update available</AlertTitle>
             <AlertDescription class="gap-2">
                 <p>
-                    Version <strong>{{ props.updateCheck.latestVersion }}</strong> is available.
-                    You are currently running <strong>{{ props.updateCheck.currentVersion }}</strong>.
+                    Version
+                    <strong>{{ props.updateCheck.latestVersion }}</strong> is
+                    available. You are currently running
+                    <strong>{{ props.updateCheck.currentVersion }}</strong
+                    >.
                 </p>
                 <div class="flex flex-wrap items-center gap-3">
                     <a

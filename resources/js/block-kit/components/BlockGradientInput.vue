@@ -41,8 +41,10 @@ const resolvedValue = computed(
 
 const previewStyle = computed(
     () =>
-        gradientBackgroundStyle(props.modelValue, props.defaultValue as GradientConfig) ??
-        gradientBackgroundStyle(resolvedValue.value),
+        gradientBackgroundStyle(
+            props.modelValue,
+            props.defaultValue as GradientConfig,
+        ) ?? gradientBackgroundStyle(resolvedValue.value),
 );
 
 const gradientPresets = computed(() =>
@@ -125,13 +127,17 @@ function clearGradient() {
                 <ColorPicker
                     :model-value="resolvedValue.end"
                     :default-value="resolvedValue.end"
-                    @update:model-value="updateGradient({ end: String($event) })"
+                    @update:model-value="
+                        updateGradient({ end: String($event) })
+                    "
                 />
             </div>
         </div>
 
         <div class="mt-3 space-y-1.5">
-            <div class="flex items-center justify-between text-xs text-muted-foreground">
+            <div
+                class="flex items-center justify-between text-xs text-muted-foreground"
+            >
                 <span>Angle</span>
                 <span>{{ resolvedValue.angle }}&deg;</span>
             </div>

@@ -90,7 +90,6 @@ function updateBlock(patch: Record<string, unknown>) {
 function updateGenericField(key: string, value: unknown) {
     updateBlock({ [key]: value });
 }
-
 </script>
 
 <template>

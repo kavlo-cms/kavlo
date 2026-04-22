@@ -69,7 +69,8 @@ export const blockSchemas: Record<string, BlockSchema> = {
     },
     content: {
         label: 'Content',
-        description: 'Renders the page content editor output as a draggable block',
+        description:
+            'Renders the page content editor output as a draggable block',
         group: 'text',
         icon: 'AlignLeft',
         fields: [],

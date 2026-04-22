@@ -74,10 +74,7 @@ const EXCLUSIVE_STYLE_GROUPS = {
         partnerKey: 'gradient',
         label: 'Button style',
     },
-} as const satisfies Record<
-    string,
-    { partnerKey: string; label: string }
->;
+} as const satisfies Record<string, { partnerKey: string; label: string }>;
 
 const RESERVED_METADATA_KEYS = new Set([
     'title',
@@ -139,9 +136,8 @@ function updateBlockField(key: string, value: unknown) {
         return;
     }
 
-    const exclusiveGroup = EXCLUSIVE_STYLE_GROUPS[
-        key as keyof typeof EXCLUSIVE_STYLE_GROUPS
-    ];
+    const exclusiveGroup =
+        EXCLUSIVE_STYLE_GROUPS[key as keyof typeof EXCLUSIVE_STYLE_GROUPS];
 
     emit('update:blockData', props.selectedBlock.id, {
         ...(props.selectedBlock.data ?? {}),
@@ -185,15 +181,17 @@ function getExclusivePartnerField(
     fields: BlockField[],
 ): BlockField | null {
     const config =
-        EXCLUSIVE_STYLE_GROUPS[field.key as keyof typeof EXCLUSIVE_STYLE_GROUPS];
+        EXCLUSIVE_STYLE_GROUPS[
+            field.key as keyof typeof EXCLUSIVE_STYLE_GROUPS
+        ];
 
     if (!config) {
         return null;
     }
 
-    return fields.find(
-        (candidate) => candidate.key === config.partnerKey,
-    ) ?? null;
+    return (
+        fields.find((candidate) => candidate.key === config.partnerKey) ?? null
+    );
 }
 
 function isExclusiveSecondaryField(field: BlockField): boolean {
@@ -237,9 +235,7 @@ function setExclusiveMode(
     emit('update:blockData', props.selectedBlock.id, {
         ...(props.selectedBlock.data ?? {}),
         [primaryField.key]:
-            mode === 'color'
-                ? resolveExclusiveFieldValue(primaryField)
-                : null,
+            mode === 'color' ? resolveExclusiveFieldValue(primaryField) : null,
         [partnerField.key]:
             mode === 'gradient'
                 ? resolveExclusiveFieldValue(partnerField)
@@ -723,24 +719,26 @@ function removeMeta(index: number) {
                 </div>
 
                 <div v-if="schema" class="flex flex-col gap-4 p-4">
-                    <div
-                        v-for="field in schema.fields"
-                        :key="field.key"
-                    >
+                    <div v-for="field in schema.fields" :key="field.key">
                         <div
                             v-if="!isExclusiveSecondaryField(field)"
                             class="flex flex-col gap-1.5"
                         >
                             <template
                                 v-if="
-                                    getExclusivePartnerField(field, schema.fields)
+                                    getExclusivePartnerField(
+                                        field,
+                                        schema.fields,
+                                    )
                                 "
                             >
                                 <Label>{{
                                     getExclusiveStyleLabel(field)
                                 }}</Label>
 
-                                <div class="inline-flex w-fit rounded-md border p-1">
+                                <div
+                                    class="inline-flex w-fit rounded-md border p-1"
+                                >
                                     <button
                                         type="button"
                                         class="rounded px-2.5 py-1 text-xs transition-colors"
@@ -766,7 +764,8 @@ function removeMeta(index: number) {
                                         type="button"
                                         class="rounded px-2.5 py-1 text-xs transition-colors"
                                         :class="
-                                            getExclusiveMode(field) === 'gradient'
+                                            getExclusiveMode(field) ===
+                                            'gradient'
                                                 ? 'bg-accent text-foreground'
                                                 : 'text-muted-foreground hover:text-foreground'
                                         "
@@ -810,7 +809,10 @@ function removeMeta(index: number) {
                                         )
                                     "
                                     @media-select="
-                                        handleBlockMediaSelect(field.key, $event)
+                                        handleBlockMediaSelect(
+                                            field.key,
+                                            $event,
+                                        )
                                     "
                                 />
                             </template>
@@ -823,13 +825,18 @@ function removeMeta(index: number) {
                                 <BlockFieldInput
                                     :id="`block-${field.key}`"
                                     :field="resolveField(field)"
-                                    :model-value="selectedBlock.data?.[field.key]"
+                                    :model-value="
+                                        selectedBlock.data?.[field.key]
+                                    "
                                     :pages="pages"
                                     @update:model-value="
                                         updateBlockField(field.key, $event)
                                     "
                                     @media-select="
-                                        handleBlockMediaSelect(field.key, $event)
+                                        handleBlockMediaSelect(
+                                            field.key,
+                                            $event,
+                                        )
                                     "
                                 />
                             </template>

@@ -102,7 +102,11 @@ function updateSaturationFromEvent(event: PointerEvent) {
     }
 
     const rect = target.getBoundingClientRect();
-    const nextSaturation = clamp((event.clientX - rect.left) / rect.width, 0, 1);
+    const nextSaturation = clamp(
+        (event.clientX - rect.left) / rect.width,
+        0,
+        1,
+    );
     const nextValue = clamp(1 - (event.clientY - rect.top) / rect.height, 0, 1);
 
     saturation.value = nextSaturation;
@@ -279,7 +283,9 @@ function hsvToHex(h: number, s: number, v: number) {
             </div>
 
             <div class="space-y-1.5">
-                <div class="flex items-center justify-between text-xs text-muted-foreground">
+                <div
+                    class="flex items-center justify-between text-xs text-muted-foreground"
+                >
                     <span>Hue</span>
                     <span>{{ Math.round(hue) }}&deg;</span>
                 </div>
@@ -292,9 +298,7 @@ function hsvToHex(h: number, s: number, v: number) {
                     class="h-2 w-full cursor-pointer appearance-none rounded-full border border-transparent"
                     :style="hueBackgroundStyle"
                     @input="
-                        hue = Number(
-                            ($event.target as HTMLInputElement).value,
-                        );
+                        hue = Number(($event.target as HTMLInputElement).value);
                         updateFromCurrentHsv();
                     "
                 />

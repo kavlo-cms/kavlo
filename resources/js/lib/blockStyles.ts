@@ -1,12 +1,7 @@
 import type { CSSProperties } from 'vue';
 
 export type BlockWidth = 'full' | 'wide' | 'medium' | 'narrow';
-export type TextTone =
-    | 'default'
-    | 'muted'
-    | 'primary'
-    | 'accent'
-    | 'inverse';
+export type TextTone = 'default' | 'muted' | 'primary' | 'accent' | 'inverse';
 export type ButtonTone = 'brand' | 'neutral' | 'success' | 'danger';
 export type ButtonRadius = 'rounded' | 'soft' | 'pill' | 'square';
 
@@ -74,9 +69,7 @@ function hexToRgb(value: string): [number, number, number] | null {
 function hexToRgba(value: string, alpha: number): string | undefined {
     const rgb = hexToRgb(value);
 
-    return rgb
-        ? `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`
-        : undefined;
+    return rgb ? `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})` : undefined;
 }
 
 function readableTextColor(background: string): string {
@@ -187,7 +180,10 @@ export const buttonColorPresets: ColorPreset[] = [
 
 export const textGradientPresets: GradientPreset[] = [
     { label: 'Ocean', value: { start: '#38bdf8', end: '#818cf8', angle: 90 } },
-    { label: 'Sunrise', value: { start: '#f97316', end: '#facc15', angle: 90 } },
+    {
+        label: 'Sunrise',
+        value: { start: '#f97316', end: '#facc15', angle: 90 },
+    },
     { label: 'Aurora', value: { start: '#22c55e', end: '#06b6d4', angle: 90 } },
 ];
 
@@ -228,11 +224,15 @@ export function resolveBlockColorInputValue(
     }
 
     if (key === 'text_color') {
-        return textToneColors[(String(value ?? 'default') as TextTone)] ?? fallback;
+        return (
+            textToneColors[String(value ?? 'default') as TextTone] ?? fallback
+        );
     }
 
     if (key === 'tone') {
-        return buttonToneColors[(String(value ?? 'brand') as ButtonTone)] ?? fallback;
+        return (
+            buttonToneColors[String(value ?? 'brand') as ButtonTone] ?? fallback
+        );
     }
 
     return fallback;
@@ -297,7 +297,10 @@ export function subtleTextToneStyle(value: unknown): CSSProperties | undefined {
         : undefined;
 }
 
-export function buttonVariantClass(variantValue: unknown, toneValue: unknown): string {
+export function buttonVariantClass(
+    variantValue: unknown,
+    toneValue: unknown,
+): string {
     const variant = String(variantValue ?? 'primary');
 
     if (isHexColor(toneValue)) {
@@ -316,26 +319,33 @@ export function buttonVariantClass(variantValue: unknown, toneValue: unknown): s
     const classes: Record<string, Record<ButtonTone, string>> = {
         primary: {
             brand: 'bg-primary text-primary-foreground hover:bg-primary/90',
-            neutral: 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200',
+            neutral:
+                'bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200',
             success: 'bg-emerald-600 text-white hover:bg-emerald-500',
             danger: 'bg-red-600 text-white hover:bg-red-500',
         },
         secondary: {
             brand: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-            neutral: 'bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700',
-            success: 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-950 dark:text-emerald-200 dark:hover:bg-emerald-900',
+            neutral:
+                'bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700',
+            success:
+                'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-950 dark:text-emerald-200 dark:hover:bg-emerald-900',
             danger: 'bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-950 dark:text-red-200 dark:hover:bg-red-900',
         },
         outline: {
             brand: 'border border-primary text-primary hover:bg-primary/10',
-            neutral: 'border border-slate-300 text-slate-900 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800',
-            success: 'border border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950',
+            neutral:
+                'border border-slate-300 text-slate-900 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800',
+            success:
+                'border border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950',
             danger: 'border border-red-500 text-red-700 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950',
         },
         ghost: {
             brand: 'text-primary hover:bg-primary/10',
-            neutral: 'text-slate-900 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800',
-            success: 'text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950',
+            neutral:
+                'text-slate-900 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800',
+            success:
+                'text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950',
             danger: 'text-red-700 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950',
         },
     };

@@ -30,10 +30,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-    <div
-        v-if="field.type === 'toggle'"
-        class="flex items-center gap-2 pt-0.5"
-    >
+    <div v-if="field.type === 'toggle'" class="flex items-center gap-2 pt-0.5">
         <Switch
             :id="id"
             :model-value="Boolean(modelValue)"

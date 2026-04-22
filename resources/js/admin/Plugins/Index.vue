@@ -275,7 +275,9 @@ function uploadArchive() {
                     <div class="flex flex-wrap items-center gap-2">
                         <span v-if="plugin.author">By {{ plugin.author }}</span>
                         <span v-if="plugin.author">&middot;</span>
-                        <code class="rounded bg-muted px-1">{{ plugin.slug }}</code>
+                        <code class="rounded bg-muted px-1">{{
+                            plugin.slug
+                        }}</code>
                     </div>
 
                     <div
