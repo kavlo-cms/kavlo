@@ -9,13 +9,14 @@ use App\Models\Redirect;
 use App\Models\Revision;
 use App\Models\User;
 use App\Services\SystemHealthService;
+use App\Services\UpdateChannelService;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class DashboardController extends Controller
 {
-    public function index(SystemHealthService $health): Response
+    public function index(SystemHealthService $health, UpdateChannelService $updates): Response
     {
         $stats = [
             'total_pages' => Page::count(),
@@ -37,6 +38,7 @@ class DashboardController extends Controller
             'stats' => $stats,
             'recentRevisions' => $recentRevisions,
             'systemHealth' => $health->report(),
+            'updateCheck' => $updates->report(),
         ]);
     }
 }

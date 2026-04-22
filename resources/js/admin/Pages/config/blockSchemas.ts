@@ -1,29 +1,20 @@
-export interface BlockField {
-    key: string;
-    label: string;
-    type:
-        | 'text'
-        | 'textarea'
-        | 'url'
-        | 'select'
-        | 'toggle'
-        | 'number'
-        | 'media'
-        | 'page-link';
-    placeholder?: string;
-    options?: { value: string; label: string }[];
-}
-
-export interface BlockSchema {
-    label: string;
-    description?: string;
-    group: string;
-    icon: string;
-    inlineEditable?: boolean;
-    acceptsChildren?: boolean;
-    allowedChildren?: string[];
-    fields: BlockField[];
-}
+import {
+    alignmentOptions,
+    commonButtonColorField,
+    commonButtonGradientField,
+    commonHeroHeadlineGradientField,
+    commonTextColorField,
+    commonTextGradientField,
+    commonWidthField,
+    mediaField,
+    pageLinkField,
+    selectField,
+    textField,
+    toggleField,
+    urlField,
+} from '@/block-kit';
+export type { BlockField, BlockSchema } from '@/block-kit';
+import type { BlockSchema } from '@/block-kit';
 
 export const blockGroups: Record<string, string> = {
     text: 'Text',
@@ -51,26 +42,17 @@ export const blockSchemas: Record<string, BlockSchema> = {
         inlineEditable: true,
         fields: [
             {
-                key: 'level',
-                label: 'Level',
-                type: 'select',
-                options: [
+                ...selectField('level', 'Level', [
                     { value: 'h1', label: 'H1 – Page title' },
                     { value: 'h2', label: 'H2 – Section heading' },
                     { value: 'h3', label: 'H3 – Sub-heading' },
                     { value: 'h4', label: 'H4 – Small heading' },
-                ],
+                ]),
             },
-            {
-                key: 'align',
-                label: 'Alignment',
-                type: 'select',
-                options: [
-                    { value: 'left', label: 'Left' },
-                    { value: 'center', label: 'Center' },
-                    { value: 'right', label: 'Right' },
-                ],
-            },
+            selectField('align', 'Alignment', alignmentOptions),
+            commonWidthField,
+            commonTextColorField,
+            commonTextGradientField,
         ],
     },
     text: {
@@ -79,6 +61,17 @@ export const blockSchemas: Record<string, BlockSchema> = {
         group: 'text',
         icon: 'AlignLeft',
         inlineEditable: true,
+        fields: [
+            commonWidthField,
+            commonTextColorField,
+            commonTextGradientField,
+        ],
+    },
+    content: {
+        label: 'Content',
+        description: 'Renders the page content editor output as a draggable block',
+        group: 'text',
+        icon: 'AlignLeft',
         fields: [],
     },
     quote: {
@@ -87,7 +80,7 @@ export const blockSchemas: Record<string, BlockSchema> = {
         group: 'text',
         icon: 'Quote',
         inlineEditable: true,
-        fields: [],
+        fields: [commonWidthField, commonTextColorField],
     },
     list: {
         label: 'List',
@@ -97,14 +90,13 @@ export const blockSchemas: Record<string, BlockSchema> = {
         inlineEditable: true,
         fields: [
             {
-                key: 'style',
-                label: 'List style',
-                type: 'select',
-                options: [
+                ...selectField('style', 'List style', [
                     { value: 'bullet', label: 'Bullet' },
                     { value: 'numbered', label: 'Numbered' },
-                ],
+                ]),
             },
+            commonWidthField,
+            commonTextColorField,
         ],
     },
 
@@ -117,16 +109,14 @@ export const blockSchemas: Record<string, BlockSchema> = {
         acceptsChildren: true,
         fields: [
             {
-                key: 'background',
-                label: 'Background',
-                type: 'text',
-                placeholder: '#ffffff or bg-slate-950',
+                ...textField('background', 'Background', {
+                    placeholder: '#ffffff or bg-slate-950',
+                }),
             },
             {
-                key: 'padding',
-                label: 'Padding class',
-                type: 'text',
-                placeholder: 'py-12 px-6',
+                ...textField('padding', 'Padding class', {
+                    placeholder: 'py-12 px-6',
+                }),
             },
         ],
     },
@@ -138,24 +128,18 @@ export const blockSchemas: Record<string, BlockSchema> = {
         acceptsChildren: true,
         fields: [
             {
-                key: 'count',
-                label: 'Number of columns',
-                type: 'select',
-                options: [
+                ...selectField('count', 'Number of columns', [
                     { value: '2', label: '2 columns' },
                     { value: '3', label: '3 columns' },
                     { value: '4', label: '4 columns' },
-                ],
+                ]),
             },
             {
-                key: 'gap',
-                label: 'Column gap',
-                type: 'select',
-                options: [
+                ...selectField('gap', 'Column gap', [
                     { value: 'sm', label: 'Small' },
                     { value: 'md', label: 'Medium' },
                     { value: 'lg', label: 'Large' },
-                ],
+                ]),
             },
         ],
     },
@@ -166,24 +150,18 @@ export const blockSchemas: Record<string, BlockSchema> = {
         icon: 'Minus',
         fields: [
             {
-                key: 'style',
-                label: 'Style',
-                type: 'select',
-                options: [
+                ...selectField('style', 'Style', [
                     { value: 'line', label: 'Line' },
                     { value: 'dots', label: 'Dots' },
                     { value: 'none', label: 'None (space only)' },
-                ],
+                ]),
             },
             {
-                key: 'spacing',
-                label: 'Spacing',
-                type: 'select',
-                options: [
+                ...selectField('spacing', 'Spacing', [
                     { value: 'sm', label: 'Small' },
                     { value: 'md', label: 'Medium' },
                     { value: 'lg', label: 'Large' },
-                ],
+                ]),
             },
         ],
     },
@@ -194,16 +172,13 @@ export const blockSchemas: Record<string, BlockSchema> = {
         icon: 'ArrowUpDown',
         fields: [
             {
-                key: 'size',
-                label: 'Height',
-                type: 'select',
-                options: [
+                ...selectField('size', 'Height', [
                     { value: 'xs', label: 'XS – 1rem' },
                     { value: 'sm', label: 'SM – 2rem' },
                     { value: 'md', label: 'MD – 4rem' },
                     { value: 'lg', label: 'LG – 8rem' },
                     { value: 'xl', label: 'XL – 16rem' },
-                ],
+                ]),
             },
         ],
     },
@@ -215,29 +190,24 @@ export const blockSchemas: Record<string, BlockSchema> = {
         group: 'media',
         icon: 'Image',
         fields: [
-            { key: 'src', label: 'Image', type: 'media' },
+            mediaField('src', 'Image'),
             {
-                key: 'alt',
-                label: 'Alt text',
-                type: 'text',
-                placeholder: 'Describe the image',
+                ...textField('alt', 'Alt text', {
+                    placeholder: 'Describe the image',
+                }),
             },
             {
-                key: 'caption',
-                label: 'Caption',
-                type: 'text',
-                placeholder: 'Optional caption below image',
+                ...textField('caption', 'Caption', {
+                    placeholder: 'Optional caption below image',
+                }),
             },
             {
-                key: 'width',
-                label: 'Width',
-                type: 'select',
-                options: [
+                ...selectField('width', 'Width', [
                     { value: 'full', label: 'Full width' },
                     { value: 'wide', label: 'Wide' },
                     { value: 'medium', label: 'Medium' },
                     { value: 'small', label: 'Small' },
-                ],
+                ]),
             },
         ],
     },
@@ -248,16 +218,15 @@ export const blockSchemas: Record<string, BlockSchema> = {
         icon: 'Video',
         fields: [
             {
-                key: 'url',
-                label: 'Video URL',
-                type: 'url',
-                placeholder: 'https://youtube.com/watch?v=... or vimeo.com/...',
+                ...urlField('url', 'Video URL', {
+                    placeholder:
+                        'https://youtube.com/watch?v=... or vimeo.com/...',
+                }),
             },
             {
-                key: 'caption',
-                label: 'Caption',
-                type: 'text',
-                placeholder: 'Optional caption',
+                ...textField('caption', 'Caption', {
+                    placeholder: 'Optional caption',
+                }),
             },
         ],
     },
@@ -272,16 +241,9 @@ export const blockSchemas: Record<string, BlockSchema> = {
         acceptsChildren: true,
         allowedChildren: ['button'],
         fields: [
+            mediaField('background_image', 'Background Image'),
             {
-                key: 'background_image',
-                label: 'Background Image',
-                type: 'media',
-            },
-            {
-                key: 'width_mode',
-                label: 'Layout Width',
-                type: 'select',
-                options: [
+                ...selectField('width_mode', 'Layout Width', [
                     {
                         value: 'full-page-constrained',
                         label: 'Full page width, constrained content',
@@ -294,8 +256,9 @@ export const blockSchemas: Record<string, BlockSchema> = {
                         value: 'full-content-width',
                         label: 'Full content width',
                     },
-                ],
+                ]),
             },
+            commonHeroHeadlineGradientField,
         ],
     },
     button: {
@@ -305,39 +268,40 @@ export const blockSchemas: Record<string, BlockSchema> = {
         icon: 'MousePointer2',
         inlineEditable: true,
         fields: [
-            { key: 'url', label: 'Link', type: 'page-link' },
+            pageLinkField('url', 'Link'),
             {
-                key: 'variant',
-                label: 'Style',
-                type: 'select',
-                options: [
+                ...selectField('variant', 'Style', [
                     { value: 'primary', label: 'Primary' },
                     { value: 'secondary', label: 'Secondary' },
                     { value: 'outline', label: 'Outline' },
                     { value: 'ghost', label: 'Ghost' },
-                ],
+                ]),
             },
             {
-                key: 'size',
-                label: 'Size',
-                type: 'select',
-                options: [
+                ...selectField('size', 'Size', [
                     { value: 'sm', label: 'Small' },
                     { value: 'md', label: 'Medium' },
                     { value: 'lg', label: 'Large' },
-                ],
+                ]),
+            },
+            selectField('align', 'Alignment', alignmentOptions),
+            commonButtonColorField,
+            commonButtonGradientField,
+            {
+                ...selectField('radius', 'Corner style', [
+                    { value: 'rounded', label: 'Rounded' },
+                    { value: 'soft', label: 'Soft' },
+                    { value: 'pill', label: 'Pill' },
+                    { value: 'square', label: 'Square' },
+                ]),
             },
             {
-                key: 'align',
-                label: 'Alignment',
-                type: 'select',
-                options: [
-                    { value: 'left', label: 'Left' },
-                    { value: 'center', label: 'Center' },
-                    { value: 'right', label: 'Right' },
-                ],
+                ...selectField('width', 'Button width', [
+                    { value: 'auto', label: 'Auto' },
+                    { value: 'full', label: 'Full width' },
+                ]),
             },
-            { key: 'new_tab', label: 'Open in new tab', type: 'toggle' },
+            toggleField('new_tab', 'Open in new tab'),
         ],
     },
     callout: {
@@ -348,15 +312,12 @@ export const blockSchemas: Record<string, BlockSchema> = {
         inlineEditable: true,
         fields: [
             {
-                key: 'type',
-                label: 'Type',
-                type: 'select',
-                options: [
+                ...selectField('type', 'Type', [
                     { value: 'info', label: 'Info' },
                     { value: 'success', label: 'Success' },
                     { value: 'warning', label: 'Warning' },
                     { value: 'error', label: 'Error' },
-                ],
+                ]),
             },
         ],
     },

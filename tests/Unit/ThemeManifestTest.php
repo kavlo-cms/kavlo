@@ -32,4 +32,23 @@ class ThemeManifestTest extends TestCase
         $this->assertContains('$.pageTypes[0].view is required.', $errors);
         $this->assertContains('$.pageTypes[0].type does not match the required pattern.', $errors);
     }
+
+    public function test_it_rejects_invalid_text_color_presets(): void
+    {
+        $errors = app(ThemeManifest::class)->validate([
+            'name' => 'Broken Theme',
+            'slug' => 'broken-theme',
+            'blockStyles' => [
+                'textColorPresets' => [
+                    [
+                        'label' => 'Broken',
+                        'value' => 'sky',
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertNotEmpty($errors);
+        $this->assertContains('$.blockStyles.textColorPresets[0].value does not match the required pattern.', $errors);
+    }
 }

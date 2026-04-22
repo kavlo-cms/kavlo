@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { Eye, Image as ImageIcon, Plus, X } from 'lucide-vue-next';
+import { Eye, Plus, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
-import MediaPicker from '@/components/MediaPicker.vue';
 import type { MediaItem } from '@/components/MediaPicker.vue';
+import { BlockFieldInput } from '@/block-kit';
+import type { BlockField, BlockPageOption } from '@/block-kit';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useBlockSchemas } from '@/composables/useBlockSchemas';
+import { normalizeGradientConfig } from '@/lib/blockStyles';
 import type { AvailableBlock } from '@/composables/useBlockSchemas';
 import type { Block } from '@/types/blocks';
 
@@ -17,12 +19,6 @@ type Tab = 'page' | 'block' | 'revisions';
 interface MetaPair {
     key: string;
     value: string;
-}
-
-interface PageOption {
-    id: number;
-    title: string;
-    slug: string;
 }
 
 interface PageForm {
@@ -52,6 +48,12 @@ interface PageType {
     source_label?: string;
 }
 
+interface ThemeConfig {
+    blockStyles?: {
+        textColorPresets?: { label: string; value: string }[];
+    };
+}
+
 interface RevisionEntry {
     id: number;
     label: string;
@@ -60,6 +62,22 @@ interface RevisionEntry {
     preview_url: string;
     summary: string[];
 }
+
+type ExclusiveStyleMode = 'color' | 'gradient';
+
+const EXCLUSIVE_STYLE_GROUPS = {
+    text_color: {
+        partnerKey: 'text_gradient',
+        label: 'Text style',
+    },
+    tone: {
+        partnerKey: 'gradient',
+        label: 'Button style',
+    },
+} as const satisfies Record<
+    string,
+    { partnerKey: string; label: string }
+>;
 
 const RESERVED_METADATA_KEYS = new Set([
     'title',
@@ -75,9 +93,10 @@ const RESERVED_METADATA_KEYS = new Set([
 const props = defineProps<{
     form: PageForm;
     selectedBlock: Block | null;
-    pages: PageOption[];
+    pages: BlockPageOption[];
     revisions: RevisionEntry[];
     availableBlocks: AvailableBlock[];
+    themeConfig?: ThemeConfig;
     pageTypes: PageType[];
 }>();
 
@@ -115,72 +134,160 @@ const selectedPageType = computed(
         ) ?? null,
 );
 
-function updateBlockField(key: string, value: string) {
+function updateBlockField(key: string, value: unknown) {
+    if (!props.selectedBlock) {
+        return;
+    }
+
+    const exclusiveGroup = EXCLUSIVE_STYLE_GROUPS[
+        key as keyof typeof EXCLUSIVE_STYLE_GROUPS
+    ];
+
+    emit('update:blockData', props.selectedBlock.id, {
+        ...(props.selectedBlock.data ?? {}),
+        ...(exclusiveGroup ? { [exclusiveGroup.partnerKey]: null } : {}),
+        [key]: value,
+    });
+}
+
+function handleBlockMediaSelect(fieldKey: string, item: MediaItem) {
+    if (!props.selectedBlock) {
+        return;
+    }
+
+    if (fieldKey !== 'src') {
+        return;
+    }
+
+    emit('update:blockData', props.selectedBlock.id, {
+        ...(props.selectedBlock.data ?? {}),
+        src: item.url,
+        alt: item.alt || item.name,
+    });
+}
+
+function resolveField(field: BlockField): BlockField {
+    if (
+        field.key === 'text_color' &&
+        props.themeConfig?.blockStyles?.textColorPresets?.length
+    ) {
+        return {
+            ...field,
+            presets: props.themeConfig.blockStyles.textColorPresets,
+        };
+    }
+
+    return field;
+}
+
+function getExclusivePartnerField(
+    field: BlockField,
+    fields: BlockField[],
+): BlockField | null {
+    const config =
+        EXCLUSIVE_STYLE_GROUPS[field.key as keyof typeof EXCLUSIVE_STYLE_GROUPS];
+
+    if (!config) {
+        return null;
+    }
+
+    return fields.find(
+        (candidate) => candidate.key === config.partnerKey,
+    ) ?? null;
+}
+
+function isExclusiveSecondaryField(field: BlockField): boolean {
+    return Object.values(EXCLUSIVE_STYLE_GROUPS).some(
+        (config) => config.partnerKey === field.key,
+    );
+}
+
+function getExclusiveStyleLabel(field: BlockField): string {
+    return (
+        EXCLUSIVE_STYLE_GROUPS[field.key as keyof typeof EXCLUSIVE_STYLE_GROUPS]
+            ?.label ?? field.label
+    );
+}
+
+function getExclusiveMode(primaryField: BlockField): ExclusiveStyleMode {
+    if (!props.selectedBlock) {
+        return 'color';
+    }
+
+    const partnerField = getExclusivePartnerField(
+        primaryField,
+        schema.value?.fields ?? [],
+    );
+
+    return partnerField &&
+        normalizeGradientConfig(props.selectedBlock.data?.[partnerField.key])
+        ? 'gradient'
+        : 'color';
+}
+
+function setExclusiveMode(
+    primaryField: BlockField,
+    partnerField: BlockField,
+    mode: ExclusiveStyleMode,
+) {
     if (!props.selectedBlock) {
         return;
     }
 
     emit('update:blockData', props.selectedBlock.id, {
         ...(props.selectedBlock.data ?? {}),
-        [key]: value,
+        [primaryField.key]:
+            mode === 'color'
+                ? resolveExclusiveFieldValue(primaryField)
+                : null,
+        [partnerField.key]:
+            mode === 'gradient'
+                ? resolveExclusiveFieldValue(partnerField)
+                : null,
     });
 }
 
-// ── Media picker ──────────────────────────────────────────────────────────────
-const mediaPickerOpen = ref(false);
-const mediaPickerFieldKey = ref('');
+function resolveExclusiveFieldValue(field: BlockField): unknown {
+    const currentValue = props.selectedBlock?.data?.[field.key];
 
-function openMediaPicker(fieldKey: string) {
-    mediaPickerFieldKey.value = fieldKey;
-    mediaPickerOpen.value = true;
-}
-
-function onMediaSelect(item: MediaItem) {
-    if (!props.selectedBlock) {
-        return;
+    if (currentValue != null) {
+        return currentValue;
     }
 
-    const updates: Record<string, unknown> = {
-        ...(props.selectedBlock.data ?? {}),
-        [mediaPickerFieldKey.value]: item.url,
-    };
-
-    // If picking the main src field, also update alt
-    if (mediaPickerFieldKey.value === 'src') {
-        updates.alt = item.alt || item.name;
+    if (field.defaultValue != null) {
+        return field.defaultValue;
     }
 
-    emit('update:blockData', props.selectedBlock.id, updates);
+    return field.presets?.[0]?.value ?? null;
 }
 
-// ── Page-link field ───────────────────────────────────────────────────────────
-const pageLinkModes = ref<Record<string, 'page' | 'custom'>>({});
+function getActiveExclusiveField(
+    primaryField: BlockField,
+    fields: BlockField[],
+): BlockField {
+    const partnerField = getExclusivePartnerField(primaryField, fields);
 
-function pageLinkMode(fieldKey: string): 'page' | 'custom' {
-    if (pageLinkModes.value[fieldKey]) {
-        return pageLinkModes.value[fieldKey];
-    }
-
-    // Auto-detect: if value looks like a page slug (starts with /) or matches a page slug → page mode
-    const val = (props.selectedBlock?.data?.[fieldKey] as string) ?? '';
-    const isPageSlug = val === '' || props.pages.some((p) => p.slug === val);
-
-    return isPageSlug ? 'page' : 'custom';
+    return getExclusiveMode(primaryField) === 'gradient' && partnerField
+        ? partnerField
+        : primaryField;
 }
 
-function setPageLinkMode(fieldKey: string, mode: 'page' | 'custom') {
-    pageLinkModes.value[fieldKey] = mode;
-    // Clear value when switching modes
-    updateBlockField(fieldKey, '');
+function getActiveExclusiveFieldValue(
+    primaryField: BlockField,
+    fields: BlockField[],
+): unknown {
+    const activeField = getActiveExclusiveField(primaryField, fields);
+
+    return props.selectedBlock?.data?.[activeField.key];
 }
 
-// Reset modes when selected block changes
-watch(
-    () => props.selectedBlock?.id,
-    () => {
-        pageLinkModes.value = {};
-    },
-);
+function updateExclusiveField(
+    primaryField: BlockField,
+    fields: BlockField[],
+    value: unknown,
+) {
+    updateBlockField(getActiveExclusiveField(primaryField, fields).key, value);
+}
 
 // ── Metadata ──────────────────────────────────────────────────────────────────
 const METADATA_KEYS = ['keywords', 'robots', 'canonical'];
@@ -619,204 +726,114 @@ function removeMeta(index: number) {
                     <div
                         v-for="field in schema.fields"
                         :key="field.key"
-                        class="flex flex-col gap-1.5"
                     >
-                        <Label :for="`block-${field.key}`">{{
-                            field.label
-                        }}</Label>
-
-                        <!-- Toggle -->
                         <div
-                            v-if="field.type === 'toggle'"
-                            class="flex items-center gap-2 pt-0.5"
-                        >
-                            <Switch
-                                :id="`block-${field.key}`"
-                                :model-value="!!selectedBlock.data?.[field.key]"
-                                @update:model-value="
-                                    updateBlockField(
-                                        field.key,
-                                        $event ? 'true' : '',
-                                    )
-                                "
-                            />
-                            <span class="text-xs text-muted-foreground">{{
-                                selectedBlock.data?.[field.key] ? 'On' : 'Off'
-                            }}</span>
-                        </div>
-
-                        <!-- Select -->
-                        <select
-                            v-else-if="field.type === 'select'"
-                            :id="`block-${field.key}`"
-                            :value="
-                                (selectedBlock.data?.[field.key] as string) ??
-                                field.options?.[0]?.value ??
-                                ''
-                            "
-                            class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:ring-1 focus:ring-ring focus:outline-none"
-                            @change="
-                                updateBlockField(
-                                    field.key,
-                                    ($event.target as HTMLSelectElement).value,
-                                )
-                            "
-                        >
-                            <option
-                                v-for="opt in field.options"
-                                :key="opt.value"
-                                :value="opt.value"
-                            >
-                                {{ opt.label }}
-                            </option>
-                        </select>
-
-                        <!-- Textarea -->
-                        <Textarea
-                            v-else-if="field.type === 'textarea'"
-                            :id="`block-${field.key}`"
-                            :model-value="
-                                (selectedBlock.data?.[field.key] as string) ??
-                                ''
-                            "
-                            :placeholder="field.placeholder"
-                            rows="3"
-                            @update:model-value="
-                                updateBlockField(field.key, $event as string)
-                            "
-                        />
-
-                        <!-- Media picker -->
-                        <div
-                            v-else-if="field.type === 'media'"
+                            v-if="!isExclusiveSecondaryField(field)"
                             class="flex flex-col gap-1.5"
                         >
-                            <div
-                                v-if="selectedBlock.data?.[field.key]"
-                                class="group relative overflow-hidden rounded-lg border"
+                            <template
+                                v-if="
+                                    getExclusivePartnerField(field, schema.fields)
+                                "
                             >
-                                <img
-                                    :src="
-                                        selectedBlock.data[field.key] as string
-                                    "
-                                    class="h-28 w-full object-cover"
-                                    alt=""
-                                />
-                                <button
-                                    class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
-                                    @click="openMediaPicker(field.key)"
-                                >
-                                    <span
-                                        class="rounded bg-white/90 px-2 py-1 text-xs font-medium text-gray-900"
-                                        >Change</span
+                                <Label>{{
+                                    getExclusiveStyleLabel(field)
+                                }}</Label>
+
+                                <div class="inline-flex w-fit rounded-md border p-1">
+                                    <button
+                                        type="button"
+                                        class="rounded px-2.5 py-1 text-xs transition-colors"
+                                        :class="
+                                            getExclusiveMode(field) === 'color'
+                                                ? 'bg-accent text-foreground'
+                                                : 'text-muted-foreground hover:text-foreground'
+                                        "
+                                        @click="
+                                            setExclusiveMode(
+                                                field,
+                                                getExclusivePartnerField(
+                                                    field,
+                                                    schema.fields,
+                                                ) ?? field,
+                                                'color',
+                                            )
+                                        "
                                     >
-                                </button>
-                            </div>
-                            <button
-                                v-else
-                                class="flex h-20 w-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-muted-foreground/30 text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/5"
-                                @click="openMediaPicker(field.key)"
-                            >
-                                <ImageIcon class="h-5 w-5 opacity-50" />
-                                <span class="text-xs">Choose from Library</span>
-                            </button>
-                        </div>
+                                        Color
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="rounded px-2.5 py-1 text-xs transition-colors"
+                                        :class="
+                                            getExclusiveMode(field) === 'gradient'
+                                                ? 'bg-accent text-foreground'
+                                                : 'text-muted-foreground hover:text-foreground'
+                                        "
+                                        @click="
+                                            setExclusiveMode(
+                                                field,
+                                                getExclusivePartnerField(
+                                                    field,
+                                                    schema.fields,
+                                                ) ?? field,
+                                                'gradient',
+                                            )
+                                        "
+                                    >
+                                        Gradient
+                                    </button>
+                                </div>
 
-                        <!-- Page link picker -->
-                        <div
-                            v-else-if="field.type === 'page-link'"
-                            class="flex flex-col gap-2"
-                        >
-                            <div class="flex gap-1.5">
-                                <button
-                                    class="flex-1 rounded-md border px-2.5 py-1.5 text-left text-xs transition-colors"
-                                    :class="
-                                        pageLinkMode(field.key) === 'page'
-                                            ? 'border-primary bg-primary text-primary-foreground'
-                                            : 'text-muted-foreground hover:bg-accent'
+                                <BlockFieldInput
+                                    :id="`block-${field.key}`"
+                                    :field="
+                                        resolveField(
+                                            getActiveExclusiveField(
+                                                field,
+                                                schema.fields,
+                                            ),
+                                        )
                                     "
-                                    @click="setPageLinkMode(field.key, 'page')"
-                                >
-                                    Page
-                                </button>
-                                <button
-                                    class="flex-1 rounded-md border px-2.5 py-1.5 text-left text-xs transition-colors"
-                                    :class="
-                                        pageLinkMode(field.key) === 'custom'
-                                            ? 'border-primary bg-primary text-primary-foreground'
-                                            : 'text-muted-foreground hover:bg-accent'
+                                    :model-value="
+                                        getActiveExclusiveFieldValue(
+                                            field,
+                                            schema.fields,
+                                        )
                                     "
-                                    @click="
-                                        setPageLinkMode(field.key, 'custom')
+                                    :pages="pages"
+                                    @update:model-value="
+                                        updateExclusiveField(
+                                            field,
+                                            schema.fields,
+                                            $event,
+                                        )
                                     "
-                                >
-                                    Custom
-                                </button>
-                            </div>
-                            <select
-                                v-if="pageLinkMode(field.key) === 'page'"
-                                :value="
-                                    (selectedBlock.data?.[
-                                        field.key
-                                    ] as string) ?? ''
-                                "
-                                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:ring-1 focus:ring-ring focus:outline-none"
-                                @change="
-                                    updateBlockField(
-                                        field.key,
-                                        ($event.target as HTMLSelectElement)
-                                            .value,
-                                    )
-                                "
-                            >
-                                <option value="">— Select a page —</option>
-                                <option
-                                    v-for="p in pages"
-                                    :key="p.id"
-                                    :value="p.slug"
-                                >
-                                    {{ p.title }}
-                                </option>
-                            </select>
-                            <Input
-                                v-else
-                                :id="`block-${field.key}`"
-                                type="text"
-                                :model-value="
-                                    (selectedBlock.data?.[
-                                        field.key
-                                    ] as string) ?? ''
-                                "
-                                placeholder="https://... or javascript:void(0)"
-                                @update:model-value="
-                                    updateBlockField(
-                                        field.key,
-                                        $event as string,
-                                    )
-                                "
-                            />
-                        </div>
+                                    @media-select="
+                                        handleBlockMediaSelect(field.key, $event)
+                                    "
+                                />
+                            </template>
 
-                        <!-- Text / URL / Number -->
-                        <Input
-                            v-else
-                            :id="`block-${field.key}`"
-                            :type="
-                                field.type === 'url'
-                                    ? 'url'
-                                    : field.type === 'number'
-                                      ? 'number'
-                                      : 'text'
-                            "
-                            :model-value="
-                                (selectedBlock.data?.[field.key] as string) ??
-                                ''
-                            "
-                            :placeholder="field.placeholder"
-                            @update:model-value="
-                                updateBlockField(field.key, $event as string)
-                            "
-                        />
+                            <template v-else>
+                                <Label :for="`block-${field.key}`">{{
+                                    field.label
+                                }}</Label>
+
+                                <BlockFieldInput
+                                    :id="`block-${field.key}`"
+                                    :field="resolveField(field)"
+                                    :model-value="selectedBlock.data?.[field.key]"
+                                    :pages="pages"
+                                    @update:model-value="
+                                        updateBlockField(field.key, $event)
+                                    "
+                                    @media-select="
+                                        handleBlockMediaSelect(field.key, $event)
+                                    "
+                                />
+                            </template>
+                        </div>
                     </div>
 
                     <p
@@ -926,12 +943,5 @@ function removeMeta(index: number) {
                 </div>
             </div>
         </div>
-
-        <!-- Media picker dialog (shared across all media fields) -->
-        <MediaPicker
-            :open="mediaPickerOpen"
-            @update:open="mediaPickerOpen = $event"
-            @select="onMediaSelect"
-        />
     </aside>
 </template>

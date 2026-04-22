@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
+import { BlockFieldInput } from '@/block-kit';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import type { AvailableBlock } from '@/composables/useBlockSchemas';
 import type { Block } from '@/types/blocks';
@@ -90,6 +90,7 @@ function updateBlock(patch: Record<string, unknown>) {
 function updateGenericField(key: string, value: unknown) {
     updateBlock({ [key]: value });
 }
+
 </script>
 
 <template>
@@ -281,57 +282,10 @@ function updateGenericField(key: string, value: unknown) {
                 <div class="flex flex-col gap-1.5">
                     <Label :for="`block-${field.key}`">{{ field.label }}</Label>
 
-                    <Textarea
-                        v-if="field.type === 'textarea'"
+                    <BlockFieldInput
                         :id="`block-${field.key}`"
-                        :model-value="
-                            String(selectedBlock.data?.[field.key] ?? '')
-                        "
-                        :placeholder="field.placeholder"
-                        rows="4"
-                        @update:model-value="
-                            updateGenericField(field.key, $event)
-                        "
-                    />
-
-                    <Switch
-                        v-else-if="field.type === 'toggle'"
-                        :id="`block-${field.key}`"
-                        :model-value="Boolean(selectedBlock.data?.[field.key])"
-                        @update:model-value="
-                            updateGenericField(field.key, $event)
-                        "
-                    />
-
-                    <select
-                        v-else-if="field.type === 'select'"
-                        :id="`block-${field.key}`"
-                        class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus:ring-1 focus:ring-ring focus:outline-none"
-                        :value="String(selectedBlock.data?.[field.key] ?? '')"
-                        @change="
-                            updateGenericField(
-                                field.key,
-                                ($event.target as HTMLSelectElement).value,
-                            )
-                        "
-                    >
-                        <option
-                            v-for="option in field.options ?? []"
-                            :key="option.value"
-                            :value="option.value"
-                        >
-                            {{ option.label }}
-                        </option>
-                    </select>
-
-                    <Input
-                        v-else
-                        :id="`block-${field.key}`"
-                        :type="field.type === 'url' ? 'url' : 'text'"
-                        :model-value="
-                            String(selectedBlock.data?.[field.key] ?? '')
-                        "
-                        :placeholder="field.placeholder"
+                        :field="field"
+                        :model-value="selectedBlock.data?.[field.key]"
                         @update:model-value="
                             updateGenericField(field.key, $event)
                         "

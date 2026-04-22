@@ -200,6 +200,90 @@ BLADE,
             ], false);
     }
 
+    public function test_content_block_renders_content_at_block_position_without_duplicate_output(): void
+    {
+        View::addNamespace('theme', base_path('themes/midnight-blue/views'));
+
+        Page::create([
+            'title' => 'Builder content block page',
+            'slug' => 'builder-content-block-page',
+            'type' => 'page',
+            'editor_mode' => 'builder',
+            'content' => '<p>Inline content from the content editor.</p>',
+            'is_published' => true,
+            'blocks' => [
+                [
+                    'id' => 'heading-1',
+                    'type' => 'heading',
+                    'data' => [
+                        'text' => 'Heading before content',
+                    ],
+                    'order' => 0,
+                ],
+                [
+                    'id' => 'content-1',
+                    'type' => 'content',
+                    'data' => [],
+                    'order' => 1,
+                ],
+            ],
+        ]);
+
+        $response = $this->get('/builder-content-block-page')
+            ->assertOk()
+            ->assertSeeInOrder([
+                'Heading before content',
+                'Inline content from the content editor.',
+            ], false);
+
+        $this->assertSame(
+            1,
+            substr_count($response->getContent(), 'Inline content from the content editor.'),
+        );
+    }
+
+    public function test_content_mode_uses_content_block_position_when_present(): void
+    {
+        View::addNamespace('theme', base_path('themes/midnight-blue/views'));
+
+        Page::create([
+            'title' => 'Hybrid positioned content page',
+            'slug' => 'hybrid-positioned-content-page',
+            'type' => 'page',
+            'editor_mode' => 'content',
+            'content' => '<p>Content block body.</p>',
+            'is_published' => true,
+            'blocks' => [
+                [
+                    'id' => 'content-1',
+                    'type' => 'content',
+                    'data' => [],
+                    'order' => 0,
+                ],
+                [
+                    'id' => 'heading-1',
+                    'type' => 'heading',
+                    'data' => [
+                        'text' => 'Heading after content block',
+                    ],
+                    'order' => 1,
+                ],
+            ],
+        ]);
+
+        $response = $this->get('/hybrid-positioned-content-page')
+            ->assertOk()
+            ->assertSeeInOrder([
+                'Content block body.',
+                'Heading after content block',
+            ], false);
+
+        $this->assertSame(
+            1,
+            substr_count($response->getContent(), 'Content block body.'),
+        );
+    }
+
     public function test_hero_can_render_full_page_width_with_constrained_content(): void
     {
         View::addNamespace('theme', base_path('themes/midnight-blue/views'));
@@ -367,6 +451,56 @@ BLADE,
                                 [
                                     'type' => 'heading',
                                     'data' => ['text' => 'Broken child'],
+                                ],
+                            ],
+                        ],
+                        'order' => 0,
+                    ],
+                ],
+                'metadata' => [],
+                'meta_title' => null,
+                'meta_description' => null,
+                'og_image' => null,
+                'publish_at' => null,
+                'unpublish_at' => null,
+            ])
+            ->assertSessionHasErrors('blocks');
+    }
+
+    public function test_page_update_rejects_nested_content_blocks(): void
+    {
+        $user = $this->adminUser();
+
+        $page = Page::create([
+            'title' => 'Draft Product Landing',
+            'slug' => 'draft-product-landing',
+            'type' => 'page',
+            'editor_mode' => 'builder',
+            'blocks' => [],
+            'metadata' => [],
+        ]);
+
+        $this->actingAs($user)
+            ->put(route('admin.pages.update', $page), [
+                'title' => 'Draft Product Landing',
+                'slug' => 'draft-product-landing',
+                'type' => 'page',
+                'editor_mode' => 'builder',
+                'content' => '<p>Page content</p>',
+                'is_published' => false,
+                'is_homepage' => false,
+                'parent_id' => null,
+                'blocks' => [
+                    [
+                        'id' => 'section-1',
+                        'type' => 'section',
+                        'data' => [
+                            'children' => [
+                                [
+                                    'id' => 'content-1',
+                                    'type' => 'content',
+                                    'data' => [],
+                                    'order' => 0,
                                 ],
                             ],
                         ],

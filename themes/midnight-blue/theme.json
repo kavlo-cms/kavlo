@@ -9,6 +9,15 @@
         "class": "bg-slate-950 text-slate-200",
         "font": null
     },
+    "blockStyles": {
+        "textColorPresets": [
+            { "label": "Moonlight", "value": "#e2e8f0" },
+            { "label": "Sky", "value": "#38bdf8" },
+            { "label": "Aurora", "value": "#22c55e" },
+            { "label": "Ember", "value": "#fb7185" },
+            { "label": "Gold", "value": "#fbbf24" }
+        ]
+    },
     "pageTypes": [
         { "type": "page",       "label": "Standard Page",  "view": "pages.show" },
         { "type": "landing",    "label": "Landing Page",   "view": "pages.landing" },

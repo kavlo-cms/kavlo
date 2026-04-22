@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Plus, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+import { BlockFieldInput } from '@/block-kit';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -402,43 +403,10 @@ function updateOption(
                 >
                     <Label :for="`block-${field.key}`">{{ field.label }}</Label>
 
-                    <select
-                        v-if="field.type === 'select'"
+                    <BlockFieldInput
                         :id="`block-${field.key}`"
-                        class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus:ring-1 focus:ring-ring focus:outline-none"
-                        :value="String(selectedBlock.data?.[field.key] ?? '')"
-                        @change="
-                            updateGenericBlockField(
-                                field.key,
-                                ($event.target as HTMLSelectElement).value,
-                            )
-                        "
-                    >
-                        <option
-                            v-for="option in field.options ?? []"
-                            :key="option.value"
-                            :value="option.value"
-                        >
-                            {{ option.label }}
-                        </option>
-                    </select>
-
-                    <Switch
-                        v-else-if="field.type === 'toggle'"
-                        :id="`block-${field.key}`"
-                        :model-value="Boolean(selectedBlock.data?.[field.key])"
-                        @update:model-value="
-                            updateGenericBlockField(field.key, $event)
-                        "
-                    />
-
-                    <Input
-                        v-else
-                        :id="`block-${field.key}`"
-                        :model-value="
-                            String(selectedBlock.data?.[field.key] ?? '')
-                        "
-                        :placeholder="field.placeholder"
+                        :field="field"
+                        :model-value="selectedBlock.data?.[field.key]"
                         @update:model-value="
                             updateGenericBlockField(field.key, $event)
                         "

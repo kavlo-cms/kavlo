@@ -35,4 +35,12 @@ return [
     'storage' => [
         'public_disk' => env('CMS_PUBLIC_DISK', env('MEDIA_DISK', 'public')),
     ],
+    'updates' => [
+        'enabled' => env('CMS_UPDATE_CHECK_ENABLED', true),
+        'release_api_url' => env('CMS_RELEASE_API_URL', 'https://api.github.com/repos/kavlo-cms/kavlo/releases/latest'),
+        'release_repository_url' => env('CMS_RELEASE_REPOSITORY_URL', 'https://github.com/kavlo-cms/kavlo/releases'),
+        'cache_ttl_minutes' => (int) env('CMS_UPDATE_CHECK_TTL', 360),
+        'timeout_seconds' => (int) env('CMS_UPDATE_CHECK_TIMEOUT', 5),
+        'plugin_cache_ttl_minutes' => (int) env('CMS_PLUGIN_UPDATE_CHECK_TTL', 360),
+    ],
 ];

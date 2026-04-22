@@ -26,6 +26,7 @@ const props = defineProps<{
     selectedBlockId: string | null;
     device: Device;
     themeConfig: ThemeConfig;
+    pageContent?: string;
     entityLabel?: string;
     titlePlaceholder?: string;
     allowFileDrop?: boolean;
@@ -337,6 +338,7 @@ async function onCanvasDrop(e: DragEvent) {
                             :is="getBlockPreview(block.type)"
                             :type="block.type"
                             :data="block.data"
+                            :page-content="pageContent"
                             @update:data="
                                 emit('update:blockData', block.id, $event)
                             "

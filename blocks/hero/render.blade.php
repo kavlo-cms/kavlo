@@ -1,5 +1,10 @@
 @php
     $widthMode = $data['width_mode'] ?? 'full-page-constrained';
+    $headlineGradient = kavlo_gradient_text_style($data['headline_gradient'] ?? [
+        'start' => '#ffffff',
+        'end' => '#64748b',
+        'angle' => 90,
+    ]);
     $sectionClasses = 'relative overflow-hidden bg-slate-950 py-24';
     $contentClasses = 'relative z-10 text-center';
 
@@ -26,7 +31,7 @@
         <div class="absolute inset-0 bg-slate-950/60"></div>
     @endif
     <div class="{{ $contentClasses }}">
-        <h1 class="text-6xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-500 mb-6">
+        <h1 class="mb-6 text-6xl font-extrabold md:text-8xl" style="{{ $headlineGradient }}">
             {{ $data['headline'] ?? '' }}
         </h1>
         <p class="text-xl text-slate-400 max-w-2xl mx-auto mb-10">

@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/vue3';
 import {
     AlertTriangle,
     ArrowRightLeft,
+    ArrowUpRight,
     CheckCircle2,
     Clock,
     FileText,
@@ -12,6 +13,7 @@ import {
     Users,
 } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
@@ -54,10 +56,21 @@ interface SystemHealth {
     checks: HealthCheck[];
 }
 
+interface UpdateCheck {
+    enabled: boolean;
+    currentVersion: string;
+    latestVersion: string | null;
+    releaseUrl: string | null;
+    publishedAt: string | null;
+    checkedAt: string | null;
+    available: boolean;
+}
+
 const props = defineProps<{
     stats: Stats;
     recentRevisions: Revision[];
     systemHealth: SystemHealth;
+    updateCheck: UpdateCheck;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/admin' }];
@@ -112,6 +125,35 @@ function healthIcon(check: HealthCheck) {
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
         <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
+
+        <Alert v-if="props.updateCheck.available" class="border-primary/30 bg-primary/5">
+            <AlertTriangle class="size-4 text-primary" />
+            <AlertTitle>Update available</AlertTitle>
+            <AlertDescription class="gap-2">
+                <p>
+                    Version <strong>{{ props.updateCheck.latestVersion }}</strong> is available.
+                    You are currently running <strong>{{ props.updateCheck.currentVersion }}</strong>.
+                </p>
+                <div class="flex flex-wrap items-center gap-3">
+                    <a
+                        v-if="props.updateCheck.releaseUrl"
+                        :href="props.updateCheck.releaseUrl"
+                        target="_blank"
+                        rel="noreferrer"
+                        class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                    >
+                        View release
+                        <ArrowUpRight class="size-4" />
+                    </a>
+                    <span
+                        v-if="props.updateCheck.publishedAt"
+                        class="text-xs text-muted-foreground"
+                    >
+                        Published {{ timeAgo(props.updateCheck.publishedAt) }}
+                    </span>
+                </div>
+            </AlertDescription>
+        </Alert>
 
         <!-- Stat cards -->
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

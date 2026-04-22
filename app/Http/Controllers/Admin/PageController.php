@@ -770,7 +770,13 @@ class PageController extends Controller
 
         $allowedTypes = collect($this->availablePageBlocks())->pluck('type')->all();
 
-        return $this->blockPayload->validateAllowedTypes($blocks, $allowedTypes);
+        $allowedTypeErrors = $this->blockPayload->validateAllowedTypes($blocks, $allowedTypes);
+
+        if ($allowedTypeErrors !== []) {
+            return $allowedTypeErrors;
+        }
+
+        return $this->validateContentBlockPlacement($this->normalizePageBlocks($blocks));
     }
 
     /**
@@ -787,6 +793,75 @@ class PageController extends Controller
         $theme = Theme::where('is_active', true)->value('slug') ?? 'blocks';
 
         return EmbeddableFormRegistry::decorateAvailableBlocks(BlockManager::getAvailableBlocks($theme));
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $blocks
+     * @return array<int, string>
+     */
+    private function validateContentBlockPlacement(array $blocks): array
+    {
+        $contentBlockCount = 0;
+        $errors = [];
+
+        foreach ($blocks as $index => $block) {
+            if (($block['type'] ?? null) === 'content') {
+                $contentBlockCount++;
+
+                if ($contentBlockCount > 1) {
+                    $errors[] = 'Only one Content block is allowed per page.';
+
+                    break;
+                }
+            }
+
+            $errors = [
+                ...$errors,
+                ...$this->validateNestedContentBlocks(
+                    is_array($block['data'] ?? null) ? $block['data'] : [],
+                    '$['.$index.']',
+                ),
+            ];
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<int, string>
+     */
+    private function validateNestedContentBlocks(array $data, string $path): array
+    {
+        $errors = [];
+
+        foreach ($data as $key => $value) {
+            if (($key !== 'children' && preg_match('/^col_\d+$/', (string) $key) !== 1) || ! is_array($value)) {
+                continue;
+            }
+
+            foreach ($value as $index => $child) {
+                if (! is_array($child)) {
+                    continue;
+                }
+
+                if (($child['type'] ?? null) === 'content') {
+                    $errors[] = "Content blocks can only be placed at the top level ({$path}.data.{$key}[{$index}]).";
+
+                    continue;
+                }
+
+                $errors = [
+                    ...$errors,
+                    ...$this->validateNestedContentBlocks(
+                        is_array($child['data'] ?? null) ? $child['data'] : [],
+                        "{$path}.data.{$key}[{$index}]",
+                    ),
+                ];
+            }
+        }
+
+        return $errors;
     }
 
     private function renderPreviewHtml(Page $preview): string

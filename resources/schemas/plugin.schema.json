@@ -27,6 +27,10 @@
         "author": {
             "type": "string"
         },
+        "update_url": {
+            "type": "string",
+            "format": "uri"
+        },
         "entrypoint": {
             "type": "string",
             "minLength": 1

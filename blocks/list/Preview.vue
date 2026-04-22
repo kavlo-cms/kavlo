@@ -2,12 +2,16 @@
 import { computed } from 'vue';
 import { Plus, Trash2 } from 'lucide-vue-next';
 import InlineEdit from '@/admin/Pages/partials/InlineEdit.vue';
+import { blockWidthClass, textToneClass, textToneStyle } from '@/lib/blockStyles';
 
 const props = defineProps<{ data: Record<string, unknown> }>();
 const emit = defineEmits<{ 'update:data': [Record<string, unknown>] }>();
 
 const items = computed<string[]>(() => (props.data.items as string[]) ?? ['']);
 const isNumbered = computed(() => (props.data.style as string) === 'numbered');
+const containerClass = computed(() => blockWidthClass(props.data.width));
+const toneClass = computed(() => textToneClass(props.data.text_color));
+const toneStyle = computed(() => textToneStyle(props.data.text_color));
 
 function updateItem(i: number, val: string) {
     const next = [...items.value];
@@ -24,7 +28,11 @@ function removeItem(i: number) {
 </script>
 
 <template>
-    <div class="py-6 px-6 max-w-3xl mx-auto w-full">
+    <div
+        class="mx-auto w-full px-6 py-6"
+        :class="[containerClass, toneClass]"
+        :style="toneStyle"
+    >
         <component
             :is="isNumbered ? 'ol' : 'ul'"
             :class="['space-y-1.5', isNumbered ? 'list-decimal pl-5' : 'list-disc pl-5']"
@@ -34,7 +42,7 @@ function removeItem(i: number) {
                     tag="span"
                     :model-value="item"
                     placeholder="List item…"
-                    class="block min-w-[2ch] flex-1 text-base text-foreground"
+                    class="block min-w-[2ch] flex-1 text-base"
                     @update:model-value="updateItem(i, $event)"
                 />
                 <button

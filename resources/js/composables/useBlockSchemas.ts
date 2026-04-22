@@ -1,17 +1,7 @@
 import { computed } from 'vue';
 import { blockSchemas } from '@/admin/Pages/config/blockSchemas';
-import type { BlockSchema } from '@/admin/Pages/config/blockSchemas';
-
-export interface AvailableBlock {
-    type: string;
-    label: string;
-    // Optional schema fields provided by plugins via block.json / blocks.available hook
-    description?: string;
-    group?: string;
-    icon?: string;
-    fields?: BlockSchema['fields'];
-    defaultData?: Record<string, unknown>;
-}
+import type { AvailableBlock, BlockSchema } from '@/block-kit';
+export type { AvailableBlock } from '@/block-kit';
 
 /**
  * Merges the static compile-time blockSchemas with any dynamic schemas

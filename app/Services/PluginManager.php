@@ -176,6 +176,7 @@ class PluginManager
 
         $foundSlugs = [];
         $pluginScopes = [];
+        $pluginUpdateUrls = [];
 
         foreach (File::directories($pluginsPath) as $directory) {
             $manifest = $this->readManifestFromDirectory($directory, swallowInvalid: true);
@@ -186,6 +187,7 @@ class PluginManager
             $slug = basename($directory);
             $foundSlugs[] = $slug;
             $pluginScopes[$slug] = $manifest->scopes;
+            $pluginUpdateUrls[$slug] = $manifest->updateUrl;
 
             Plugin::updateOrCreate(
                 ['slug' => $slug],
@@ -203,7 +205,10 @@ class PluginManager
 
         return Plugin::orderBy('name')
             ->get()
-            ->each(fn (Plugin $plugin) => $plugin->setAttribute('scopes', $pluginScopes[$plugin->slug] ?? []));
+            ->each(function (Plugin $plugin) use ($pluginScopes, $pluginUpdateUrls): void {
+                $plugin->setAttribute('scopes', $pluginScopes[$plugin->slug] ?? []);
+                $plugin->setAttribute('update_url', $pluginUpdateUrls[$plugin->slug] ?? null);
+            });
     }
 
     private function bootPlugin(PluginManifest $manifest): void

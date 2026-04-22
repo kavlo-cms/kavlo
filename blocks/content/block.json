@@ -1,0 +1,1 @@
+{"$schema":"../../resources/schemas/block.schema.json","label":"Content","description":"Renders the page content editor output as a draggable block","group":"text","icon":"AlignLeft","source":"core"}

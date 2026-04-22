@@ -83,13 +83,37 @@ Change that password after first login.
 | --- | --- |
 | `app/` | Laravel application code |
 | `resources/js/` | Inertia/Vue admin UI |
+| `resources/js/block-kit/` | Public block authoring components and helpers |
 | `routes/` | Web and settings routes |
 | `plugins/` | Local plugins |
 | `themes/` | Frontend themes |
 | `blocks/` | Reusable content blocks |
 | `tests/` | Unit and feature tests |
 
+## Block kit
+
+Custom blocks can import a supported authoring surface from `@/block-kit` instead of depending on private admin internals.
+
+```ts
+import {
+    BlockFieldInput,
+    BlockInlineText,
+    commonTextColorField,
+    commonTextGradientField,
+    commonWidthField,
+    gradientField,
+    pageLinkField,
+    selectField,
+} from '@/block-kit';
+```
+
+- **Components:** `BlockFieldInput`, `BlockColorInput`, `BlockGradientInput`, `BlockMediaInput`, `BlockPageLinkInput`, `BlockInlineText`
+- **Schema helpers:** `textField`, `textareaField`, `urlField`, `numberField`, `selectField`, `toggleField`, `mediaField`, `pageLinkField`, `colorField`, `gradientField`
+- **Shared presets:** `commonWidthField`, `commonTextColorField`, `commonButtonColorField`, `commonTextGradientField`, `commonButtonGradientField`, `commonHeroHeadlineGradientField`
+- **Preview helpers:** exported from `@/block-kit` for block width, text tone, gradient text/background styles, button styles, and shared presets
+
 ## Notes
 
 - The repository includes `database/database.sqlite` and the default environment uses SQLite.
 - Uploaded plugins can be enabled from the admin and may run installers or migrations when activated.
+- Set `APP_VERSION` in production if you want the admin dashboard to detect and notify about newer Kavlo CMS releases.

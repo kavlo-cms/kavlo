@@ -26,9 +26,22 @@ interface Plugin {
     author: string | null;
     is_enabled: boolean;
     scopes?: string[];
+    update_url?: string | null;
 }
 
-const props = defineProps<{ plugins: Plugin[] }>();
+interface PluginUpdateCheck {
+    enabled: boolean;
+    currentVersion: string | null;
+    latestVersion: string | null;
+    releaseUrl: string | null;
+    checkedAt: string | null;
+    available: boolean;
+}
+
+const props = defineProps<{
+    plugins: Plugin[];
+    pluginUpdateChecks: Record<string, PluginUpdateCheck>;
+}>();
 const page = usePage<{
     errors?: Record<string, string | string[]>;
     flash?: {
@@ -223,6 +236,16 @@ function uploadArchive() {
                                             : 'Inactive'
                                     }}
                                 </Badge>
+                                <Badge
+                                    v-if="
+                                        props.pluginUpdateChecks[plugin.slug]
+                                            ?.available
+                                    "
+                                    variant="secondary"
+                                    class="text-xs"
+                                >
+                                    Update available
+                                </Badge>
                             </div>
                             <CardDescription
                                 v-if="plugin.description"
@@ -248,12 +271,41 @@ function uploadArchive() {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent
-                    v-if="plugin.author"
-                    class="pb-3 text-xs text-muted-foreground"
-                >
-                    By {{ plugin.author }} &middot;
-                    <code class="rounded bg-muted px-1">{{ plugin.slug }}</code>
+                <CardContent class="pb-3 text-xs text-muted-foreground">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span v-if="plugin.author">By {{ plugin.author }}</span>
+                        <span v-if="plugin.author">&middot;</span>
+                        <code class="rounded bg-muted px-1">{{ plugin.slug }}</code>
+                    </div>
+
+                    <div
+                        v-if="props.pluginUpdateChecks[plugin.slug]?.available"
+                        class="mt-2 flex flex-wrap items-center gap-2"
+                    >
+                        <span>
+                            Version
+                            {{
+                                props.pluginUpdateChecks[plugin.slug]
+                                    ?.latestVersion
+                            }}
+                            is available.
+                        </span>
+                        <a
+                            v-if="
+                                props.pluginUpdateChecks[plugin.slug]
+                                    ?.releaseUrl
+                            "
+                            :href="
+                                props.pluginUpdateChecks[plugin.slug]
+                                    ?.releaseUrl ?? '#'
+                            "
+                            target="_blank"
+                            rel="noreferrer"
+                            class="font-medium text-primary hover:underline"
+                        >
+                            View release
+                        </a>
+                    </div>
                 </CardContent>
                 <CardContent class="pt-0">
                     <div class="flex flex-wrap gap-1">

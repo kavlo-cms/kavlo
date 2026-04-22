@@ -6,6 +6,7 @@
         $contentHtml = trim((string) ($page->content ?? ''));
         $hasContent = $contentHtml !== '';
         $hasBlocks = !empty($page->blocks);
+        $hasContentBlock = collect($page->blocks ?? [])->contains(fn ($block) => is_array($block) && ($block['type'] ?? null) === 'content');
         $renderContentFirst = ($page->editor_mode ?? 'builder') === 'content';
     @endphp
 
@@ -13,7 +14,7 @@
         <div class="page-container container mx-auto px-6 py-10">
     @endif
 
-    @if($renderContentFirst && $hasContent)
+    @if($renderContentFirst && $hasContent && !$hasContentBlock)
         <div class="page-content">
             {!! app(\App\Services\PageContentRenderer::class)->render($page) !!}
         </div>
@@ -27,7 +28,7 @@
         </div>
     @endif
 
-    @if(!$renderContentFirst && $hasContent)
+    @if(!$renderContentFirst && $hasContent && !$hasContentBlock)
         <div class="page-content">
             {!! app(\App\Services\PageContentRenderer::class)->render($page) !!}
         </div>

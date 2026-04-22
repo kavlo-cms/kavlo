@@ -30,7 +30,10 @@ function blockLabel(block: Block): string {
 
 function onAdd(evt: { data: Block }) {
     // Enforce allowedTypes rule on drop
-    if (props.allowedTypes && !props.allowedTypes.includes(evt.data.type)) {
+    if (
+        evt.data.type === 'content' ||
+        (props.allowedTypes && !props.allowedTypes.includes(evt.data.type))
+    ) {
         // Remove the just-dropped item from this slot
         const updated = props.blocks.filter((b) => b.id !== evt.data.id);
         emit('update:blocks', updated);

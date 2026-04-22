@@ -26,4 +26,15 @@ class PluginConfigManifestTest extends TestCase
         $this->assertNotEmpty($errors);
         $this->assertContains('$.scopes[0] does not match the required pattern.', $errors);
     }
+
+    public function test_it_accepts_an_update_url(): void
+    {
+        $errors = app(PluginConfigManifest::class)->validate([
+            'name' => 'Plugin With Updates',
+            'entrypoint' => 'Plugins\\Updates\\UpdatesPlugin',
+            'update_url' => 'https://plugins.example.test/plugin.json',
+        ]);
+
+        $this->assertSame([], $errors);
+    }
 }

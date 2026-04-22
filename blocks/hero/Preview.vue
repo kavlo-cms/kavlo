@@ -2,6 +2,10 @@
 import { computed } from 'vue';
 import BlockSlot from '@/admin/Pages/partials/BlockSlot.vue';
 import InlineEdit from '@/admin/Pages/partials/InlineEdit.vue';
+import {
+    gradientTextStyle,
+    heroHeadlineGradientPresets,
+} from '@/lib/blockStyles';
 import type { Block } from '@/types/blocks';
 
 const props = defineProps<{ data: Record<string, unknown> }>();
@@ -38,6 +42,13 @@ const contentClass = computed(() => {
 
     return base;
 });
+
+const headlineStyle = computed(() =>
+    gradientTextStyle(
+        props.data.headline_gradient,
+        heroHeadlineGradientPresets[0]?.value,
+    ),
+);
 </script>
 
 <template>
@@ -62,7 +73,8 @@ const contentClass = computed(() => {
                 tag="h1"
                 :model-value="(data.headline as string) ?? ''"
                 placeholder="Your Headline Here"
-                class="mb-6 block min-w-[2ch] bg-gradient-to-r from-white to-slate-500 bg-clip-text text-6xl font-extrabold text-transparent [caret-color:white] md:text-8xl"
+                class="mb-6 block min-w-[2ch] text-6xl font-extrabold md:text-8xl"
+                :style="headlineStyle"
                 @update:model-value="update('headline', $event)"
             />
             <InlineEdit

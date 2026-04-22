@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Plugin;
 use App\Services\PluginManager;
+use App\Services\PluginUpdateChannelService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -13,7 +14,10 @@ use RuntimeException;
 
 class PluginsController extends Controller
 {
-    public function __construct(private readonly PluginManager $manager) {}
+    public function __construct(
+        private readonly PluginManager $manager,
+        private readonly PluginUpdateChannelService $updates,
+    ) {}
 
     public function index(): Response
     {
@@ -21,6 +25,7 @@ class PluginsController extends Controller
 
         return Inertia::render('Plugins/Index', [
             'plugins' => $plugins,
+            'pluginUpdateChecks' => $this->updates->reportsFor($plugins),
         ]);
     }
 

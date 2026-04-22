@@ -50,6 +50,8 @@ class PageRevisionWorkflowTest extends TestCase
                 ->component('Pages/Edit')
                 ->has('revisions', 1)
                 ->where('page.editor_mode', 'builder')
+                ->where('themeConfig.blockStyles.textColorPresets.0.label', 'Moonlight')
+                ->where('themeConfig.blockStyles.textColorPresets.0.value', '#e2e8f0')
                 ->where('revisions.0.label', 'Saved 2026-04-17 16:30')
                 ->where('revisions.0.user.name', $user->name)
                 ->where('revisions.0.preview_url', route('admin.pages.revisions.preview', [$page, $page->revisions()->first()]))
@@ -147,6 +149,118 @@ class PageRevisionWorkflowTest extends TestCase
             ->assertSee('Before', false)
             ->assertDontSee('Landing updated', false)
             ->assertDontSee('After', false);
+    }
+
+    public function test_live_preview_renders_saved_block_text_color(): void
+    {
+        $user = $this->adminUser();
+        $page = Page::create([
+            'title' => 'Landing',
+            'slug' => 'landing',
+            'type' => 'page',
+            'editor_mode' => 'builder',
+            'blocks' => [['id' => 'hero', 'type' => 'heading', 'data' => ['text' => 'Before']]],
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('admin.pages.preview.live', $page), [
+                'title' => 'Landing',
+                'slug' => 'landing',
+                'type' => 'page',
+                'editor_mode' => 'builder',
+                'blocks' => [[
+                    'id' => 'hero',
+                    'type' => 'heading',
+                    'order' => 1,
+                    'data' => [
+                        'text' => 'Colored heading',
+                        'text_color' => '#22c55e',
+                    ],
+                ]],
+            ])
+            ->assertOk()
+            ->assertSee('Colored heading', false)
+            ->assertSee('style="color: #22c55e"', false);
+    }
+
+    public function test_live_preview_renders_saved_heading_gradient(): void
+    {
+        $user = $this->adminUser();
+        $page = Page::create([
+            'title' => 'Landing',
+            'slug' => 'landing',
+            'type' => 'page',
+            'editor_mode' => 'builder',
+            'blocks' => [['id' => 'hero', 'type' => 'heading', 'data' => ['text' => 'Before']]],
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('admin.pages.preview.live', $page), [
+                'title' => 'Landing',
+                'slug' => 'landing',
+                'type' => 'page',
+                'editor_mode' => 'builder',
+                'blocks' => [[
+                    'id' => 'hero',
+                    'type' => 'heading',
+                    'order' => 1,
+                    'data' => [
+                        'text' => 'Gradient heading',
+                        'text_gradient' => [
+                            'start' => '#38bdf8',
+                            'end' => '#818cf8',
+                            'angle' => 90,
+                        ],
+                    ],
+                ]],
+            ])
+            ->assertOk()
+            ->assertSee('Gradient heading', false)
+            ->assertSee(
+                'background-image: linear-gradient(90deg, #38bdf8, #818cf8);',
+                false,
+            )
+            ->assertSee('color: transparent;', false);
+    }
+
+    public function test_live_preview_renders_saved_button_gradient(): void
+    {
+        $user = $this->adminUser();
+        $page = Page::create([
+            'title' => 'Landing',
+            'slug' => 'landing',
+            'type' => 'page',
+            'editor_mode' => 'builder',
+            'blocks' => [['id' => 'cta', 'type' => 'button', 'data' => ['text' => 'Before']]],
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('admin.pages.preview.live', $page), [
+                'title' => 'Landing',
+                'slug' => 'landing',
+                'type' => 'page',
+                'editor_mode' => 'builder',
+                'blocks' => [[
+                    'id' => 'cta',
+                    'type' => 'button',
+                    'order' => 1,
+                    'data' => [
+                        'text' => 'Gradient button',
+                        'gradient' => [
+                            'start' => '#2563eb',
+                            'end' => '#7c3aed',
+                            'angle' => 135,
+                        ],
+                    ],
+                ]],
+            ])
+            ->assertOk()
+            ->assertSee('Gradient button', false)
+            ->assertSee(
+                'background-image: linear-gradient(135deg, #2563eb, #7c3aed);',
+                false,
+            )
+            ->assertSee('border-color: transparent;', false);
     }
 
     protected function adminUser(): User

@@ -92,6 +92,9 @@ interface ThemeConfig {
         class?: string;
         font?: string | null;
     };
+    blockStyles?: {
+        textColorPresets?: { label: string; value: string }[];
+    };
 }
 
 const props = defineProps<{
@@ -177,6 +180,14 @@ const form = useForm({
 });
 
 const isBuilderMode = computed(() => form.editor_mode === 'builder');
+const hasContentBlock = computed(() =>
+    form.blocks.some((block) => block.type === 'content'),
+);
+const builderAvailableBlocks = computed(() =>
+    hasContentBlock.value
+        ? props.availableBlocks.filter((block) => block.type !== 'content')
+        : props.availableBlocks,
+);
 
 // Track the slug that is actually persisted in the DB so we can detect changes
 const savedSlug = ref(props.page.slug);
@@ -320,6 +331,10 @@ function removeBlock(id: string) {
 }
 
 function insertBlock(index: number, type: string) {
+    if (type === 'content' && hasContentBlock.value) {
+        return;
+    }
+
     const newBlock: Block = {
         id: crypto.randomUUID(),
         type,
@@ -684,7 +699,7 @@ const publishStatus = computed(() => {
             class="shrink-0 overflow-hidden"
             :style="{ width: leftWidth + 'px' }"
         >
-            <BlockPalette :available-blocks="availableBlocks" />
+            <BlockPalette :available-blocks="builderAvailableBlocks" />
         </div>
 
         <!-- Left drag handle -->
@@ -737,10 +752,11 @@ const publishStatus = computed(() => {
             v-else-if="isBuilderMode"
             :blocks="form.blocks"
             :title="form.title"
-            :available-blocks="availableBlocks"
+            :available-blocks="builderAvailableBlocks"
             :selected-block-id="selectedBlockId"
             :device="device"
             :theme-config="themeConfig"
+            :page-content="form.content"
             @update:blocks="form.blocks = $event"
             @update:block-data="updateBlockData"
             @update:title="form.title = $event"
@@ -777,6 +793,7 @@ const publishStatus = computed(() => {
                 :pages="props.pages"
                 :revisions="props.revisions"
                 :available-blocks="availableBlocks"
+                :theme-config="props.themeConfig"
                 :page-types="props.pageTypes"
                 @update:form="updateFormField"
                 @update:block-data="updateBlockData"
