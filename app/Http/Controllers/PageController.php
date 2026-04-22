@@ -24,7 +24,7 @@ class PageController extends Controller
             abort(404);
         }
 
-        $themeSlug = Theme::where('is_active', true)->value('slug') ?? 'blocks';
+        $themeSlug = Theme::where('is_active', true)->value('slug') ?? Theme::DEFAULT_THEME_SLUG;
         $view = 'theme::'.PageTypeManager::viewFor($page->type ?? 'page');
 
         // Fall back to pages.show if the type-specific view doesn't exist

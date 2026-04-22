@@ -139,7 +139,7 @@ class PageController extends Controller
             ->orderBy('title')
             ->get();
 
-        $theme = Theme::where('is_active', true)->value('slug') ?? 'blocks';
+        $theme = Theme::where('is_active', true)->value('slug') ?? Theme::DEFAULT_THEME_SLUG;
         $availableBlocks = EmbeddableFormRegistry::decorateAvailableBlocks(BlockManager::getAvailableBlocks($theme));
         $themeConfig = $this->readThemeConfig($theme);
 
@@ -790,7 +790,7 @@ class PageController extends Controller
 
     private function availablePageBlocks(): array
     {
-        $theme = Theme::where('is_active', true)->value('slug') ?? 'blocks';
+        $theme = Theme::where('is_active', true)->value('slug') ?? Theme::DEFAULT_THEME_SLUG;
 
         return EmbeddableFormRegistry::decorateAvailableBlocks(BlockManager::getAvailableBlocks($theme));
     }

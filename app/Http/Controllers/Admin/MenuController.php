@@ -44,7 +44,7 @@ class MenuController extends Controller
     public function edit(Menu $menu): Response
     {
         $pages = Page::select('id', 'title', 'slug')->orderBy('title')->get();
-        $themeSlug = Theme::where('is_active', true)->value('slug') ?? 'blocks';
+        $themeSlug = Theme::where('is_active', true)->value('slug') ?? Theme::DEFAULT_THEME_SLUG;
         $themeConfig = $this->readThemeConfig($themeSlug);
 
         return Inertia::render('Menus/Edit', [

@@ -15,7 +15,7 @@ class BlocksController extends Controller
     {
         $activeTheme = Cache::get('active_theme_slug')
             ?? Theme::where('is_active', true)->value('slug')
-            ?? '';
+            ?? Theme::DEFAULT_THEME_SLUG;
 
         $blocks = BlockManager::getAvailableBlocks($activeTheme);
 
