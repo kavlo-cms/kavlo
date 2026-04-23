@@ -388,12 +388,13 @@ class ContentRouteRegistry
     {
         $locale ??= $this->locales->currentLocale();
         $translation = $page->translationFor($locale);
+        $slug = $translation?->slug ?? $page->slug;
 
         return [
             'locale' => $locale,
             'title' => $translation?->title ?? $page->title,
-            'slug' => $translation?->slug ?? $page->slug,
-            'path' => $page->localizedPath($locale),
+            'slug' => $slug,
+            'path' => $this->locales->pathForLocale($slug, $locale),
             'is_published' => (bool) ($translation?->is_published ?? $page->is_published),
             'meta_title' => $translation?->meta_title ?? $page->meta_title,
             'meta_description' => $translation?->meta_description ?? $page->meta_description,

@@ -53,14 +53,21 @@ class GeneralController extends Controller
             'meta_description' => ['nullable', 'string', 'max:500'],
             'homepage_id' => ['nullable', 'integer', 'exists:pages,id'],
             'favicon' => ['nullable', 'string', 'max:500'],
-            'default_locale' => ['required', 'string', 'max:16'],
-            'languages' => ['required', 'array', 'min:1'],
+            'default_locale' => ['nullable', 'string', 'max:16'],
+            'languages' => ['nullable', 'array', 'min:1'],
             'languages.*.code' => ['required', 'string', 'max:16', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/i'],
             'languages.*.name' => ['required', 'string', 'max:255'],
             'languages.*.is_active' => ['boolean'],
         ]);
 
-        $languages = collect($validated['languages'])
+        $languagesInput = $validated['languages']
+            ?? $this->locales->allLanguages()->map(fn (SiteLanguage $language) => [
+                'code' => $language->code,
+                'name' => $language->name,
+                'is_active' => (bool) $language->is_active,
+            ])->all();
+
+        $languages = collect($languagesInput)
             ->map(fn (array $language) => [
                 'code' => $this->locales->normalizeLocale($language['code']),
                 'name' => trim((string) $language['name']),
@@ -74,7 +81,8 @@ class GeneralController extends Controller
             ]);
         }
 
-        $defaultLocale = $this->locales->normalizeLocale($validated['default_locale']);
+        $defaultLocale = $this->locales->normalizeLocale($validated['default_locale'] ?? null)
+            ?? $this->locales->defaultLocale();
         $defaultLanguage = $languages->firstWhere('code', $defaultLocale);
 
         if (! $defaultLanguage) {
