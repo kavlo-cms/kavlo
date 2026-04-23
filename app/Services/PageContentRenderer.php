@@ -12,6 +12,7 @@ class PageContentRenderer
 {
     public function __construct(
         protected ContentRouteRegistry $routes,
+        protected SiteLocaleManager $locales,
     ) {}
 
     public function render(Page $page): string
@@ -105,7 +106,7 @@ BLADE,
             'site' => [
                 'name' => Setting::get('site_name', config('app.name')),
                 'tagline' => Setting::get('site_tagline', ''),
-                'url' => url('/'),
+                'url' => url($this->locales->pathForLocale('/', $this->locales->currentLocale())),
             ],
             'page' => $this->pageContext($page),
             'pages' => $this->pagesContext(),
@@ -120,7 +121,7 @@ BLADE,
             'id' => $page->id,
             'title' => $page->title,
             'slug' => $page->slug,
-            'path' => '/'.ltrim($page->slug, '/'),
+            'path' => $page->localizedPath($this->locales->currentLocale()),
             'type' => $page->type,
             'isHomepage' => (bool) $page->is_homepage,
             'isPublished' => (bool) $page->is_published,
@@ -132,11 +133,15 @@ BLADE,
 
     protected function pagesContext(): array
     {
+        $locale = $this->locales->currentLocale();
+
         return Page::query()
-            ->where('is_published', true)
+            ->with(['translations' => fn ($query) => $query->where('locale', $locale)])
             ->orderBy('title')
             ->get()
-            ->map(fn (Page $page) => $this->routes->pagePayload($page))
+            ->map(fn (Page $page) => $this->routes->pagePayload($page, $locale))
+            ->filter(fn (array $page) => $page['isPublished'])
+            ->values()
             ->all();
     }
 

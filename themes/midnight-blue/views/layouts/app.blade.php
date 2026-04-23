@@ -8,13 +8,14 @@
     @vite(['resources/css/app.css'])
     @stack('styles')
 </head>
+@php($homePath = app(\App\Services\SiteLocaleManager::class)->pathForLocale('/', app(\App\Services\SiteLocaleManager::class)->currentLocale()))
 <body class="bg-slate-950 text-slate-200 selection:bg-sky-500/30">
 {!! kavlo_scripts('body_start') !!}
 <div class="flex flex-col min-h-screen">
     {{-- Navigation --}}
     <header class="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
         <div class="container mx-auto px-6 h-20 flex items-center justify-between">
-            <a href="/" class="text-2xl font-bold tracking-tighter text-white">
+            <a href="{{ $homePath }}" class="text-2xl font-bold tracking-tighter text-white">
                 MIDNIGHT<span class="text-sky-500">.</span>
             </a>
             {!! kavlo_menu('main', ['container_class' => 'hidden md:flex space-x-8']) !!}

@@ -48,6 +48,7 @@ interface PageData {
     og_image: string | null;
     publish_at: string | null;
     unpublish_at: string | null;
+    translation_exists?: boolean;
 }
 
 interface PageType {
@@ -97,6 +98,15 @@ interface ThemeConfig {
     };
 }
 
+interface PageLocale {
+    code: string;
+    name: string;
+    is_default: boolean;
+    is_active: boolean;
+    has_translation: boolean;
+    edit_url: string;
+}
+
 const props = defineProps<{
     page: PageData;
     pages: { id: number; title: string; slug: string }[];
@@ -106,6 +116,8 @@ const props = defineProps<{
     previewUrl: string;
     themeConfig: ThemeConfig;
     pageTypes: PageType[];
+    locales: PageLocale[];
+    selectedLocale: string;
 }>();
 
 type Device = 'desktop' | 'tablet' | 'mobile';
@@ -391,12 +403,17 @@ function setEditorMode(mode: EditorMode) {
 }
 
 function save() {
-    form.put(admin.pages.update(props.page.id).url, {
-        onSuccess: () => {
-            savedSlug.value = form.slug;
-            form.create_redirect = false;
+    form.put(
+        admin.pages.update(props.page.id, {
+            query: { locale: props.selectedLocale },
+        }).url,
+        {
+            onSuccess: () => {
+                savedSlug.value = form.slug;
+                form.create_redirect = false;
+            },
         },
-    });
+    );
 }
 
 async function fetchPreview() {
@@ -406,21 +423,26 @@ async function fetchPreview() {
         const token = decodeURIComponent(
             document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] ?? '',
         );
-        const res = await fetch(admin.pages.preview.live(props.page.id).url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-XSRF-TOKEN': token,
+        const res = await fetch(
+            admin.pages.preview.live(props.page.id, {
+                query: { locale: props.selectedLocale },
+            }).url,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': token,
+                },
+                body: JSON.stringify({
+                    title: form.title,
+                    slug: form.slug,
+                    type: form.type,
+                    editor_mode: form.editor_mode,
+                    content: form.content,
+                    blocks: form.blocks,
+                }),
             },
-            body: JSON.stringify({
-                title: form.title,
-                slug: form.slug,
-                type: form.type,
-                editor_mode: form.editor_mode,
-                content: form.content,
-                blocks: form.blocks,
-            }),
-        });
+        );
         previewHtml.value = await res.text();
     } finally {
         previewLoading.value = false;
@@ -529,6 +551,23 @@ const publishStatus = computed(() => {
             <div class="mx-3 h-4 w-px bg-border" />
 
             <div class="flex min-w-0 flex-1 items-center gap-2">
+                <div
+                    class="hidden items-center gap-1 rounded-md border bg-muted/40 p-1 md:flex"
+                >
+                    <Link
+                        v-for="locale in props.locales"
+                        :key="locale.code"
+                        :href="locale.edit_url"
+                        class="rounded px-2 py-1 text-xs transition-colors"
+                        :class="
+                            props.selectedLocale === locale.code
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                        "
+                    >
+                        {{ locale.code.toUpperCase() }}
+                    </Link>
+                </div>
                 <input
                     :value="form.title"
                     class="min-w-0 flex-1 rounded-md bg-transparent px-2 py-1 text-sm font-medium focus:ring-1 focus:ring-ring focus:outline-none"
@@ -575,6 +614,12 @@ const publishStatus = computed(() => {
                     class="mr-2 hidden rounded-full border px-2 py-1 text-xs text-muted-foreground sm:inline-flex"
                 >
                     {{ publishStatus }}
+                </span>
+                <span
+                    v-if="!props.page.translation_exists"
+                    class="hidden rounded-full border border-dashed px-2 py-1 text-xs text-amber-600 sm:inline-flex dark:text-amber-300"
+                >
+                    New translation
                 </span>
             </div>
 

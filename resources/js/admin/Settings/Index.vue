@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link, useForm } from '@inertiajs/vue3';
-import { Code, Save } from 'lucide-vue-next';
+import { computed } from 'vue';
+import { Code, Plus, Save, Trash2 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -18,6 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
 import admin from '@/routes/admin';
@@ -38,9 +40,18 @@ interface Settings {
     favicon?: string;
 }
 
+interface SiteLanguage {
+    code: string;
+    name: string;
+    is_active: boolean;
+    is_default?: boolean;
+}
+
 const props = defineProps<{
     settings: Settings;
     pages: Page[];
+    languages: SiteLanguage[];
+    defaultLocale: string;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -57,7 +68,42 @@ const form = useForm({
     meta_description: props.settings.meta_description ?? '',
     homepage_id: props.settings.homepage_id ?? null,
     favicon: props.settings.favicon ?? '',
+    languages: props.languages.map((language) => ({
+        code: language.code,
+        name: language.name,
+        is_active: language.is_active,
+    })),
+    default_locale: props.defaultLocale,
 });
+
+const defaultLanguageOptions = computed(() =>
+    form.languages.filter(
+        (language) => language.is_active && language.code.trim() !== '',
+    ),
+);
+
+function addLanguage() {
+    form.languages.push({
+        code: '',
+        name: '',
+        is_active: true,
+    });
+}
+
+function removeLanguage(index: number) {
+    if (form.languages.length <= 1) {
+        return;
+    }
+
+    const [removed] = form.languages.splice(index, 1);
+
+    if (removed?.code === form.default_locale) {
+        form.default_locale =
+            defaultLanguageOptions.value[0]?.code ??
+            form.languages[0]?.code ??
+            '';
+    }
+}
 
 function save() {
     form.put(admin.settings.update.url(), { preserveScroll: true });
@@ -193,6 +239,145 @@ function save() {
                                 Aim for 150–160 characters.
                             </p>
                         </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Site Languages</CardTitle>
+                        <CardDescription
+                            >Choose the default language and the translated
+                            locales editors can add to pages.</CardDescription
+                        >
+                    </CardHeader>
+                    <CardContent class="space-y-4">
+                        <div class="space-y-3">
+                            <div
+                                v-for="(language, index) in form.languages"
+                                :key="`${index}-${language.code}`"
+                                class="rounded-lg border p-4"
+                            >
+                                <div
+                                    class="grid gap-4 md:grid-cols-[1fr,12rem,auto]"
+                                >
+                                    <div class="space-y-1.5">
+                                        <Label :for="`language-name-${index}`"
+                                            >Language name</Label
+                                        >
+                                        <Input
+                                            :id="`language-name-${index}`"
+                                            v-model="language.name"
+                                            placeholder="English"
+                                        />
+                                    </div>
+
+                                    <div class="space-y-1.5">
+                                        <Label :for="`language-code-${index}`"
+                                            >Language code</Label
+                                        >
+                                        <Input
+                                            :id="`language-code-${index}`"
+                                            v-model="language.code"
+                                            placeholder="en"
+                                        />
+                                    </div>
+
+                                    <div class="flex items-end justify-end">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            :disabled="
+                                                form.languages.length <= 1
+                                            "
+                                            @click="removeLanguage(index)"
+                                        >
+                                            <Trash2 class="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div
+                                    class="mt-4 flex items-center justify-between gap-4"
+                                >
+                                    <div>
+                                        <Label
+                                            :for="`language-active-${index}`"
+                                            class="text-sm"
+                                            >Active</Label
+                                        >
+                                        <p
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            Inactive languages stay stored but
+                                            stop resolving on the public site.
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        :id="`language-active-${index}`"
+                                        v-model="language.is_active"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between gap-4">
+                            <div>
+                                <Label for="default_locale"
+                                    >Default language</Label
+                                >
+                                <p class="text-xs text-muted-foreground">
+                                    The default locale uses unprefixed URLs like
+                                    <code class="rounded bg-muted px-1 text-xs"
+                                        >/about</code
+                                    >. Other locales use
+                                    <code class="rounded bg-muted px-1 text-xs"
+                                        >/no/about</code
+                                    >.
+                                </p>
+                            </div>
+                            <div class="w-full max-w-xs">
+                                <Select v-model="form.default_locale">
+                                    <SelectTrigger id="default_locale">
+                                        <SelectValue
+                                            placeholder="Select language"
+                                        />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            v-for="language in defaultLanguageOptions"
+                                            :key="language.code"
+                                            :value="language.code"
+                                        >
+                                            {{ language.name || language.code }}
+                                            ({{ language.code }})
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <p
+                            v-if="
+                                form.errors.languages ||
+                                form.errors.default_locale
+                            "
+                            class="text-sm text-destructive"
+                        >
+                            {{
+                                form.errors.languages ??
+                                form.errors.default_locale
+                            }}
+                        </p>
+
+                        <Button
+                            type="button"
+                            variant="outline"
+                            @click="addLanguage"
+                        >
+                            <Plus class="mr-2 h-4 w-4" />
+                            Add language
+                        </Button>
                     </CardContent>
                 </Card>
             </div>

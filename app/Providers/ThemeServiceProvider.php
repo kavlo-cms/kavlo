@@ -3,10 +3,13 @@
 namespace App\Providers;
 
 use App\Models\Theme;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use PDOException;
 
 class ThemeServiceProvider extends ServiceProvider
 {
@@ -27,32 +30,40 @@ class ThemeServiceProvider extends ServiceProvider
             return;
         }
 
-        if (! Schema::hasTable('themes')) {
-            $this->registerThemeNamespaces(Theme::DEFAULT_THEME_SLUG);
+        try {
+            if (! Schema::hasTable('themes')) {
+                $this->registerThemeNamespaces(Theme::DEFAULT_THEME_SLUG);
 
-            return;
-        }
-
-        Theme::discover();
-
-        $activeThemeSlug = Cache::rememberForever('active_theme_slug', function () {
-            $theme = Theme::where('is_active', true)->first();
-
-            if (! $theme) {
-                $theme = Theme::where('slug', Theme::DEFAULT_THEME_SLUG)->first()
-                    ?? Theme::orderBy('name')->first();
-
-                if ($theme) {
-                    $theme->activate();
-                }
+                return;
             }
 
-            return $theme?->slug;
-        });
+            Theme::discover();
 
-        // 3. Use the string to set the paths
-        if ($activeThemeSlug) {
-            $this->registerThemeNamespaces($activeThemeSlug);
+            $activeThemeSlug = Cache::rememberForever('active_theme_slug', function () {
+                $theme = Theme::where('is_active', true)->first();
+
+                if (! $theme) {
+                    $theme = Theme::where('slug', Theme::DEFAULT_THEME_SLUG)->first()
+                        ?? Theme::orderBy('name')->first();
+
+                    if ($theme) {
+                        $theme->activate();
+                    }
+                }
+
+                return $theme?->slug;
+            });
+
+            if ($activeThemeSlug) {
+                $this->registerThemeNamespaces($activeThemeSlug);
+            }
+        } catch (PDOException|QueryException $exception) {
+            Log::warning('Falling back to the default theme namespace.', [
+                'theme' => Theme::DEFAULT_THEME_SLUG,
+                'error' => $exception->getMessage(),
+            ]);
+
+            $this->registerThemeNamespaces(Theme::DEFAULT_THEME_SLUG);
         }
     }
 

@@ -7,6 +7,7 @@ use App\Http\Middleware\HandleRedirects;
 use App\Http\Middleware\LogAdminActivity;
 use App\Http\Middleware\RequireAdminRole;
 use App\Http\Middleware\SetSecurityHeaders;
+use App\Http\Middleware\SetSiteLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -30,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleAppearance::class,
             ForceLoginInDevelopment::class,
             HandleRedirects::class,
+            SetSiteLocale::class,
             HandleInertiaRequests::class,
             SetSecurityHeaders::class,
             AddLinkHeadersForPreloadedAssets::class,

@@ -4,13 +4,19 @@ namespace App\Services;
 
 use App\Models\Form;
 use App\Models\Menu;
+use App\Models\MenuItem;
 use App\Models\Page;
+use App\Models\PageTranslation;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Cache;
 
 class ContentRouteRegistry
 {
-    public const CACHE_KEY = 'cms.content_routes.v1';
+    public const CACHE_KEY = 'cms.content_routes.v2';
+
+    public function __construct(
+        private readonly SiteLocaleManager $locales,
+    ) {}
 
     public function manifest(): array
     {
@@ -75,13 +81,16 @@ class ContentRouteRegistry
             return null;
         }
 
-        $query = Page::query()->whereKey($route['id']);
+        $page = Page::query()
+            ->with('translations')
+            ->whereKey($route['id'])
+            ->first();
 
-        if (! $preview) {
-            $query->where('is_published', true);
+        if (! $page) {
+            return null;
         }
 
-        return $query->first();
+        return $page->applyLocale($route['locale']);
     }
 
     public function resolveMenu(?string $slug): ?Menu
@@ -131,33 +140,38 @@ class ContentRouteRegistry
         })));
     }
 
-    public function pagePayload(Page $page): array
+    public function pagePayload(Page $page, ?string $locale = null): array
     {
+        $data = $this->localizedPageData($page, $locale);
+
         return [
             'id' => (string) $page->id,
-            'title' => $page->title,
-            'slug' => $page->slug,
-            'path' => $this->normalizePath($page->slug),
+            'title' => $data['title'],
+            'slug' => $data['slug'],
+            'path' => $data['path'],
             'type' => $page->type,
-            'isPublished' => (bool) $page->is_published,
+            'locale' => $data['locale'],
+            'isPublished' => $data['is_published'],
             'isHomepage' => (bool) $page->is_homepage,
-            'metaTitle' => $page->meta_title,
-            'metaDescription' => $page->meta_description,
-            'ogImage' => $page->og_image,
-            'metadataJson' => json_encode($page->metadata ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}',
-            'blocks' => $this->blocksPayload($page->blocks ?? []),
-            'updatedAt' => $page->updated_at?->toAtomString(),
-            'publishedAt' => $page->published_at?->toAtomString(),
+            'metaTitle' => $data['meta_title'],
+            'metaDescription' => $data['meta_description'],
+            'ogImage' => $data['og_image'],
+            'metadataJson' => json_encode($data['metadata'] ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}',
+            'blocks' => $this->blocksPayload($data['blocks'] ?? []),
+            'updatedAt' => $data['updated_at'],
+            'publishedAt' => $data['published_at'],
         ];
     }
 
     public function menuPayload(Menu $menu): array
     {
+        $locale = $this->locales->currentLocale();
+
         return [
             'id' => (string) $menu->id,
             'name' => $menu->name,
             'slug' => $menu->slug,
-            'items' => $menu->items->map(fn ($item) => $this->menuItemPayload($item))->values()->all(),
+            'items' => $menu->items->map(fn ($item) => $this->menuItemPayload($item, $locale))->values()->all(),
             'updatedAt' => $menu->updated_at?->toAtomString(),
         ];
     }
@@ -191,7 +205,12 @@ class ContentRouteRegistry
 
     protected function buildManifest(): array
     {
+        $activeLocales = $this->locales->activeLanguages();
+        $defaultLocale = $this->locales->defaultLocale();
+        $localeCodes = $activeLocales->pluck('code')->all();
+
         $pages = Page::query()
+            ->with(['translations' => fn ($query) => $query->whereIn('locale', $localeCodes)])
             ->select('id', 'title', 'slug', 'type', 'is_published', 'is_homepage', 'updated_at')
             ->orderBy('slug')
             ->get();
@@ -214,38 +233,31 @@ class ContentRouteRegistry
         $pagePaths = [];
 
         foreach ($pages as $page) {
-            $path = $this->normalizePath($page->slug);
-            $route = [
-                'id' => (string) $page->id,
-                'type' => 'page',
-                'key' => $path,
-                'slug' => $page->slug,
-                'label' => $page->title,
-                'path' => $path,
-                'published' => (bool) $page->is_published,
-                'updated_at' => $page->updated_at?->toAtomString(),
-                'is_alias' => false,
-            ];
+            foreach ($activeLocales as $language) {
+                $translation = $page->translationFor($language->code);
 
-            $routes[] = $route;
-            $pagePaths[$path] = $route;
-        }
+                if ($language->code !== $defaultLocale && ! $translation) {
+                    continue;
+                }
 
-        if ($homepage) {
-            $rootRoute = [
-                'id' => (string) $homepage->id,
-                'type' => 'page',
-                'key' => '/',
-                'slug' => $homepage->slug,
-                'label' => $homepage->title,
-                'path' => '/',
-                'published' => (bool) $homepage->is_published,
-                'updated_at' => $homepage->updated_at?->toAtomString(),
-                'is_alias' => $this->normalizePath($homepage->slug) !== '/',
-            ];
+                $route = $this->pageRouteEntry($page, $translation, $language->code);
 
-            $routes[] = $rootRoute;
-            $pagePaths['/'] = $rootRoute;
+                $routes[] = $route;
+                $pagePaths[$route['path']] = $route;
+
+                if ($homepage && $homepage->id === $page->id) {
+                    $aliasPath = $this->locales->pathForLocale('/', $language->code, true);
+                    $aliasRoute = [
+                        ...$route,
+                        'key' => $aliasPath,
+                        'path' => $aliasPath,
+                        'is_alias' => $route['path'] !== $aliasPath,
+                    ];
+
+                    $routes[] = $aliasRoute;
+                    $pagePaths[$aliasPath] = $aliasRoute;
+                }
+            }
         }
 
         $formEntries = [];
@@ -311,18 +323,20 @@ class ContentRouteRegistry
         }, $blocks);
     }
 
-    protected function menuItemPayload($item): array
+    protected function menuItemPayload(MenuItem $item, ?string $locale = null): array
     {
+        $translatedSlug = $item->page?->translationFor($locale)?->slug ?? $item->page?->slug;
+
         return [
             'id' => (string) $item->id,
             'label' => $item->label,
             'url' => $item->page_id
-                ? ($item->page?->is_homepage ? url('/') : url($item->page?->slug ?? '/'))
+                ? url($item->page?->localizedPath($locale) ?? '/')
                 : $item->url,
             'target' => $item->target,
             'pageId' => $item->page_id ? (string) $item->page_id : null,
-            'pageSlug' => $item->page?->slug,
-            'children' => $item->children->map(fn ($child) => $this->menuItemPayload($child))->values()->all(),
+            'pageSlug' => $translatedSlug,
+            'children' => $item->children->map(fn ($child) => $this->menuItemPayload($child, $locale))->values()->all(),
         ];
     }
 
@@ -332,9 +346,9 @@ class ContentRouteRegistry
             'items' => fn ($query) => $query->whereNull('parent_id')->orderBy('order'),
             'items.children' => fn ($query) => $query->orderBy('order'),
             'items.children.children' => fn ($query) => $query->orderBy('order'),
-            'items.page',
-            'items.children.page',
-            'items.children.children.page',
+            'items.page.translations',
+            'items.children.page.translations',
+            'items.children.children.page.translations',
         ];
     }
 
@@ -347,5 +361,47 @@ class ContentRouteRegistry
         }
 
         return '/'.trim($trimmed, '/');
+    }
+
+    private function pageRouteEntry(Page $page, ?PageTranslation $translation, string $locale): array
+    {
+        $slug = $translation?->slug ?? $page->slug;
+        $title = $translation?->title ?? $page->title;
+        $published = (bool) ($translation?->is_published ?? $page->is_published);
+        $updatedAt = $translation?->updated_at?->toAtomString() ?? $page->updated_at?->toAtomString();
+
+        return [
+            'id' => (string) $page->id,
+            'type' => 'page',
+            'key' => $this->locales->pathForLocale($slug, $locale),
+            'slug' => $slug,
+            'label' => $title,
+            'path' => $this->locales->pathForLocale($slug, $locale),
+            'locale' => $locale,
+            'published' => $published,
+            'updated_at' => $updatedAt,
+            'is_alias' => false,
+        ];
+    }
+
+    private function localizedPageData(Page $page, ?string $locale = null): array
+    {
+        $locale ??= $this->locales->currentLocale();
+        $translation = $page->translationFor($locale);
+
+        return [
+            'locale' => $locale,
+            'title' => $translation?->title ?? $page->title,
+            'slug' => $translation?->slug ?? $page->slug,
+            'path' => $page->localizedPath($locale),
+            'is_published' => (bool) ($translation?->is_published ?? $page->is_published),
+            'meta_title' => $translation?->meta_title ?? $page->meta_title,
+            'meta_description' => $translation?->meta_description ?? $page->meta_description,
+            'og_image' => $translation?->og_image ?? $page->og_image,
+            'metadata' => $translation?->metadata ?? $page->metadata ?? [],
+            'blocks' => $translation?->blocks ?? $page->blocks ?? [],
+            'updated_at' => $translation?->updated_at?->toAtomString() ?? $page->updated_at?->toAtomString(),
+            'published_at' => ($translation?->published_at ?? $page->published_at)?->toAtomString(),
+        ];
     }
 }

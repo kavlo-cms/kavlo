@@ -45,7 +45,7 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.ts', "resources/js/admin/{$page['component']}.vue"])
         <x-inertia::head>
-            <title>{{ \App\Models\Setting::get('site_name', config('app.name', 'Laravel')) }}</title>
+            <title>{{ \App\Models\Setting::get('site_name', config('app.name')) }}</title>
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">

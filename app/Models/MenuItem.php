@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\SiteLocaleManager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -27,7 +28,9 @@ class MenuItem extends Model
 
     public function isActive(): bool
     {
-        $targetUrl = $this->page_id ? url($this->page->slug) : $this->url;
+        $targetUrl = $this->page_id
+            ? url($this->page->localizedPath(app(SiteLocaleManager::class)->currentLocale()))
+            : $this->url;
 
         return request()->url() === $targetUrl;
     }

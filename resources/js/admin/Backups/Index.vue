@@ -618,7 +618,7 @@ function formatBytes(bytes: number) {
                         <div class="rounded-md border p-3">
                             <p class="text-xs text-muted-foreground">Runtime</p>
                             <p class="mt-1 text-sm font-medium">
-                                Laravel {{ inspection.manifest.laravel }} / PHP
+                                {{ inspection.manifest.app_name }} / PHP
                                 {{ inspection.manifest.php }}
                             </p>
                         </div>

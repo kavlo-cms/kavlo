@@ -51,8 +51,9 @@ class MenuWalker
     protected function renderItem(MenuItem $item, int $depth): string
     {
         $itemTag = $this->format['item_tag'];
+        $locale = app(SiteLocaleManager::class)->currentLocale();
         $url = $item->page_id
-            ? ($item->page->is_homepage ? url('/') : url($item->page->slug))
+            ? url($item->page->localizedPath($locale))
             : $item->url;
 
         $active = $item->isActive() ? ' current-menu-item' : '';

@@ -34,10 +34,6 @@ class AppServiceProvider extends ServiceProvider
             return new MenuWalker;
         });
 
-        $this->app->singleton(ContentRouteRegistry::class, function ($app) {
-            return new ContentRouteRegistry;
-        });
-
     }
 
     /**

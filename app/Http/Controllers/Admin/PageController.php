@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Menu;
 use App\Models\MenuItem;
 use App\Models\Page;
+use App\Models\PageTranslation;
 use App\Models\Redirect;
 use App\Models\Revision;
 use App\Models\Theme;
@@ -16,6 +17,7 @@ use App\Services\EmbeddableFormRegistry;
 use App\Services\MenuRenderCache;
 use App\Services\PageContentRenderer;
 use App\Services\PageTypeManager;
+use App\Services\SiteLocaleManager;
 use App\Services\ThemeManifest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -106,9 +108,15 @@ class PageController extends Controller
 
         $this->authorizePublishChange($validated);
 
-        $fullSlug = $this->buildSlug($validated['slug'] ?? null, $validated['title'], $validated['parent_id'] ?? null);
+        $defaultLocale = app(SiteLocaleManager::class)->defaultLocale();
+        $fullSlug = $this->buildSlugForLocale(
+            $validated['slug'] ?? null,
+            $validated['title'],
+            $validated['parent_id'] ?? null,
+            $defaultLocale,
+        );
 
-        if (Page::where('slug', $fullSlug)->exists()) {
+        if (PageTranslation::query()->where('locale', $defaultLocale)->where('slug', $fullSlug)->exists()) {
             return back()->withErrors(['slug' => 'A page with this URL already exists.'])->withInput();
         }
 
@@ -130,9 +138,13 @@ class PageController extends Controller
             ->with('success', 'Page created.');
     }
 
-    public function edit(Page $page): Response
+    public function edit(Request $request, Page $page): Response
     {
         $this->authorize('edit pages');
+
+        $locale = $this->selectedLocale($request);
+
+        $page->load('translations');
 
         $pages = Page::where('id', '!=', $page->id)
             ->select('id', 'title', 'slug')
@@ -144,9 +156,9 @@ class PageController extends Controller
         $themeConfig = $this->readThemeConfig($theme);
 
         return Inertia::render('Pages/Edit', [
-            'page' => $page,
+            'page' => $this->editorPayload($page, $locale),
             'pages' => $pages,
-            'revisions' => $this->revisionPayload($page),
+            'revisions' => $this->isDefaultLocale($locale) ? $this->revisionPayload($page) : [],
             'availableForms' => EmbeddableFormRegistry::editorOptions(),
             'availableFormPreviews' => EmbeddableFormRegistry::editorPreviews(),
             'availableBlocks' => $availableBlocks,
@@ -154,6 +166,8 @@ class PageController extends Controller
             'previewUrl' => route('admin.pages.preview', $page),
             'themeConfig' => $themeConfig,
             'pageTypes' => PageTypeManager::all(),
+            'locales' => $this->availableLocalePayload($page),
+            'selectedLocale' => $locale,
         ]);
     }
 
@@ -167,6 +181,11 @@ class PageController extends Controller
     public function update(Request $request, Page $page): RedirectResponse
     {
         $this->authorize('edit pages');
+        $locale = $this->selectedLocale($request);
+        $defaultLocale = app(SiteLocaleManager::class)->defaultLocale();
+
+        $page->load('translations');
+        $translation = $page->translationFor($locale);
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -191,7 +210,7 @@ class PageController extends Controller
             'unpublish_at' => 'nullable|date',
         ]);
 
-        $this->authorizePublishChange($validated, $page);
+        $this->authorizePublishChange($validated, $page, $translation);
 
         $pageBlockErrors = $this->validatePageBlocks($validated['blocks'] ?? []);
 
@@ -199,9 +218,18 @@ class PageController extends Controller
             return back()->withErrors(['blocks' => $pageBlockErrors[0]])->withInput();
         }
 
-        $fullSlug = $this->buildSlug($validated['slug'] ?? null, $validated['title'], $validated['parent_id'] ?? null);
+        $fullSlug = $this->buildSlugForLocale(
+            $validated['slug'] ?? null,
+            $validated['title'],
+            $validated['parent_id'] ?? null,
+            $locale,
+        );
 
-        if (Page::where('slug', $fullSlug)->where('id', '!=', $page->id)->exists()) {
+        if (PageTranslation::query()
+            ->where('locale', $locale)
+            ->where('slug', $fullSlug)
+            ->where('page_id', '!=', $page->id)
+            ->exists()) {
             return back()->withErrors(['slug' => 'A page with this URL already exists.'])->withInput();
         }
 
@@ -212,60 +240,78 @@ class PageController extends Controller
             Page::where('is_homepage', true)->where('id', '!=', $page->id)->update(['is_homepage' => false]);
         }
 
-        if (($validated['is_published'] ?? false) && ! $page->is_published) {
+        $currentlyPublished = (bool) ($translation?->is_published ?? $page->is_published);
+
+        if (($validated['is_published'] ?? false) && ! $currentlyPublished) {
             $validated['published_at'] = now();
         } elseif (! ($validated['is_published'] ?? false)) {
             $validated['published_at'] = null;
         }
 
-        if (
-            ($this->normalizePageBlocks($validated['blocks'] ?? ($page->blocks ?? []))) !== ($page->blocks ?? [])
-            || ($validated['metadata'] ?? $page->metadata ?? []) !== ($page->metadata ?? [])
-            || Arr::only($validated, [
-                'title',
-                'slug',
-                'type',
-                'editor_mode',
-                'content',
-                'is_published',
-                'is_homepage',
-                'parent_id',
-                'meta_title',
-                'meta_description',
-                'og_image',
-                'publish_at',
-                'unpublish_at',
-            ]) !== Arr::only($page->toArray(), [
-                'title',
-                'slug',
-                'type',
-                'editor_mode',
-                'content',
-                'is_published',
-                'is_homepage',
-                'parent_id',
-                'meta_title',
-                'meta_description',
-                'og_image',
-                'publish_at',
-                'unpublish_at',
-            ])
-        ) {
+        $normalizedBlocks = $this->normalizePageBlocks($validated['blocks'] ?? []);
+        $currentLocalizedState = [
+            'title' => $translation?->title ?? $page->title,
+            'slug' => $translation?->slug ?? $page->slug,
+            'type' => $page->type,
+            'editor_mode' => $page->editor_mode ?? 'builder',
+            'content' => $translation?->content ?? $page->content,
+            'is_published' => (bool) ($translation?->is_published ?? $page->is_published),
+            'is_homepage' => (bool) $page->is_homepage,
+            'parent_id' => $page->parent_id,
+            'meta_title' => $translation?->meta_title ?? $page->meta_title,
+            'meta_description' => $translation?->meta_description ?? $page->meta_description,
+            'og_image' => $translation?->og_image ?? $page->og_image,
+            'publish_at' => ($translation?->publish_at ?? $page->publish_at)?->toDateTimeString(),
+            'unpublish_at' => ($translation?->unpublish_at ?? $page->unpublish_at)?->toDateTimeString(),
+        ];
+
+        if ($locale === $defaultLocale && (
+            $normalizedBlocks !== ($translation?->blocks ?? $page->blocks ?? [])
+            || ($validated['metadata'] ?? $translation?->metadata ?? $page->metadata ?? []) !== ($translation?->metadata ?? $page->metadata ?? [])
+            || Arr::only($validated, array_keys($currentLocalizedState)) !== $currentLocalizedState
+        )) {
             $page->revisions()->create([
+                'locale' => $locale,
                 'user_id' => auth()->id(),
-                'content_snapshot' => $page->blocks ?? [],
-                'meta_snapshot' => $page->metadata ?? [],
-                'page_snapshot' => $page->revisionSnapshot(),
+                'content_snapshot' => $translation?->blocks ?? $page->blocks ?? [],
+                'meta_snapshot' => $translation?->metadata ?? $page->metadata ?? [],
+                'page_snapshot' => $page->localizedRevisionSnapshot($locale),
                 'label' => 'Saved '.now()->format('Y-m-d H:i'),
             ]);
         }
 
-        $oldSlug = '/'.ltrim($page->slug, '/');
-        $validated['blocks'] = $this->normalizePageBlocks($validated['blocks'] ?? []);
-        $page->update(Page::sanitizePersistedAttributes($validated));
+        $oldSlug = app(SiteLocaleManager::class)->pathForLocale(
+            $translation?->slug ?? $page->slug,
+            $locale,
+        );
+
+        $validated['blocks'] = $normalizedBlocks;
+
+        $page->update(Page::sanitizePersistedAttributes([
+            'type' => $validated['type'],
+            'editor_mode' => $validated['editor_mode'],
+            'is_homepage' => $validated['is_homepage'],
+            'parent_id' => $validated['parent_id'],
+            ...($locale === $defaultLocale ? Arr::only($validated, Page::LOCALIZED_FIELDS) : []),
+        ]));
+
+        $translationPayload = Arr::only($validated, Page::LOCALIZED_FIELDS);
+        $translationPayload['locale'] = $locale;
+        $page->translations()->updateOrCreate(
+            ['locale' => $locale],
+            $translationPayload,
+        );
+
+        if ($locale === $defaultLocale) {
+            $page->refresh();
+            $this->syncDefaultTranslation($page);
+        }
 
         // Create redirect from old slug → new slug if requested and slug actually changed
-        $newSlug = '/'.ltrim($page->fresh()->slug, '/');
+        $newSlug = app(SiteLocaleManager::class)->pathForLocale(
+            $page->fresh()->translationFor($locale)?->slug ?? $page->fresh()->slug,
+            $locale,
+        );
         if (($validated['create_redirect'] ?? false) && $oldSlug !== $newSlug) {
             $r = Redirect::updateOrCreate(
                 ['from_url' => Redirect::normalizePath($oldSlug)],
@@ -275,13 +321,13 @@ class PageController extends Controller
         }
 
         // Cascade slug changes to all descendant pages
-        $this->updateDescendantSlugs($page->fresh());
+        $this->updateDescendantSlugs($page->fresh()->load('translations'), $locale);
 
         // Bust menu cache for any menu linking to this page
         $this->bustMenuCaches([$page->id]);
         app(ContentRouteRegistry::class)->forget();
 
-        return redirect()->route('admin.pages.edit', $page)
+        return redirect()->route('admin.pages.edit', $this->editRouteParameters($page, $locale))
             ->with('success', 'Page saved.');
     }
 
@@ -293,6 +339,7 @@ class PageController extends Controller
         abort_unless($revision->page_id === $page->id, 404);
 
         $page->revisions()->create([
+            'locale' => app(SiteLocaleManager::class)->defaultLocale(),
             'user_id' => auth()->id(),
             'content_snapshot' => $page->blocks ?? [],
             'meta_snapshot' => $page->metadata ?? [],
@@ -301,6 +348,7 @@ class PageController extends Controller
         ]);
 
         $page->restore($revision);
+        $this->syncDefaultTranslation($page->fresh());
 
         $this->updateDescendantSlugs($page->fresh());
         $this->bustMenuCaches([$page->id]);
@@ -453,12 +501,101 @@ class PageController extends Controller
         return $summary === [] ? ['Snapshot available'] : array_slice($summary, 0, 3);
     }
 
+    private function selectedLocale(Request $request): string
+    {
+        $manager = app(SiteLocaleManager::class);
+        $requested = $manager->normalizeLocale($request->query('locale'));
+
+        return $requested && $manager->isConfiguredLocale($requested)
+            ? $requested
+            : $manager->defaultLocale();
+    }
+
+    private function isDefaultLocale(string $locale): bool
+    {
+        return app(SiteLocaleManager::class)->isDefaultLocale($locale);
+    }
+
+    private function editorPayload(Page $page, string $locale): array
+    {
+        $translation = $page->translationFor($locale);
+        $fallback = $translation ?? $page->translationFor(app(SiteLocaleManager::class)->defaultLocale());
+
+        return [
+            'id' => $page->id,
+            'title' => $translation?->title ?? $fallback?->title ?? $page->title,
+            'slug' => $translation?->slug ?? $fallback?->slug ?? $page->slug,
+            'type' => $page->type,
+            'editor_mode' => $page->editor_mode ?? 'builder',
+            'content' => $translation?->content ?? $fallback?->content ?? $page->content,
+            'is_published' => (bool) ($translation?->is_published ?? false),
+            'is_homepage' => (bool) $page->is_homepage,
+            'parent_id' => $page->parent_id,
+            'blocks' => $translation?->blocks ?? $fallback?->blocks ?? $page->blocks ?? [],
+            'metadata' => $translation?->metadata ?? $fallback?->metadata ?? $page->metadata ?? [],
+            'meta_title' => $translation?->meta_title ?? $fallback?->meta_title ?? $page->meta_title,
+            'meta_description' => $translation?->meta_description ?? $fallback?->meta_description ?? $page->meta_description,
+            'og_image' => $translation?->og_image ?? $fallback?->og_image ?? $page->og_image,
+            'publish_at' => ($translation?->publish_at ?? $fallback?->publish_at ?? null)?->toDateTimeString(),
+            'unpublish_at' => ($translation?->unpublish_at ?? $fallback?->unpublish_at ?? null)?->toDateTimeString(),
+            'translation_exists' => $translation !== null,
+        ];
+    }
+
+    private function availableLocalePayload(Page $page): array
+    {
+        return app(SiteLocaleManager::class)
+            ->allLanguages()
+            ->map(fn ($language) => [
+                'code' => $language->code,
+                'name' => $language->name,
+                'is_default' => (bool) $language->is_default,
+                'is_active' => (bool) $language->is_active,
+                'has_translation' => $page->translationFor($language->code) !== null,
+                'edit_url' => route('admin.pages.edit', $this->editRouteParameters($page, $language->code)),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function editRouteParameters(Page $page, string $locale): array|Page
+    {
+        if ($this->isDefaultLocale($locale)) {
+            return $page;
+        }
+
+        return [
+            'page' => $page,
+            'locale' => $locale,
+        ];
+    }
+
+    private function syncDefaultTranslation(Page $page): void
+    {
+        $page->translations()->updateOrCreate(
+            ['locale' => app(SiteLocaleManager::class)->defaultLocale()],
+            Arr::only($page->toArray(), Page::LOCALIZED_FIELDS),
+        );
+    }
+
     /**
      * Build a full hierarchical slug from an optional submitted value, page title, and parent.
      * Always treats the last segment of the submitted value as the base slug.
      */
     private function buildSlug(?string $submitted, string $title, ?int $parentId): string
     {
+        return $this->buildSlugForLocale(
+            $submitted,
+            $title,
+            $parentId,
+            app(SiteLocaleManager::class)->defaultLocale(),
+        );
+    }
+
+    private function buildSlugForLocale(?string $submitted, string $title, ?int $parentId, string $locale): string
+    {
+        $baseSlug = null;
+
         if ($submitted) {
             $segments = array_values(array_filter(explode('/', $submitted)));
             $baseSlug = Str::slug(end($segments));
@@ -469,9 +606,12 @@ class PageController extends Controller
         }
 
         if ($parentId) {
-            $parent = Page::find($parentId);
+            $parent = Page::query()->with('translations')->find($parentId);
+
             if ($parent) {
-                return $parent->slug.'/'.$baseSlug;
+                $parentSlug = $parent->translationFor($locale)?->slug ?? $parent->slug;
+
+                return $parentSlug.'/'.$baseSlug;
             }
         }
 
@@ -482,8 +622,24 @@ class PageController extends Controller
     {
         $slug = $baseSlug;
         $suffix = 1;
+        $defaultLocale = app(SiteLocaleManager::class)->defaultLocale();
 
-        while (Page::withTrashed()->where('slug', $slug)->exists()) {
+        while (
+            Page::withTrashed()->where('slug', $slug)->exists()
+            || PageTranslation::query()->where('locale', $defaultLocale)->where('slug', $slug)->exists()
+        ) {
+            $slug = $baseSlug.'-'.$suffix++;
+        }
+
+        return $slug;
+    }
+
+    private function nextAvailableLocalizedSlug(string $baseSlug, string $locale): string
+    {
+        $slug = $baseSlug;
+        $suffix = 1;
+
+        while (PageTranslation::query()->where('locale', $locale)->where('slug', $slug)->exists()) {
             $slug = $baseSlug.'-'.$suffix++;
         }
 
@@ -500,16 +656,40 @@ class PageController extends Controller
     /**
      * Recursively update descendant slugs when a parent's slug changes.
      */
-    private function updateDescendantSlugs(Page $page): void
+    private function updateDescendantSlugs(Page $page, ?string $locale = null): void
     {
-        foreach ($page->children as $child) {
-            $segments = array_values(array_filter(explode('/', $child->slug)));
-            $baseSlug = end($segments) ?: Str::slug($child->title);
-            $newChildSlug = $page->slug.'/'.$baseSlug;
+        $locale ??= app(SiteLocaleManager::class)->defaultLocale();
 
-            $child->update(['slug' => $newChildSlug]);
-            MenuItem::where('page_id', $child->id)->update(['url' => '/'.$newChildSlug]);
-            $this->updateDescendantSlugs($child);
+        foreach ($page->children()->with('translations')->get() as $child) {
+            if ($this->isDefaultLocale($locale)) {
+                $baseSlug = Page::slugSegment($child->slug, $child->title);
+                $newChildSlug = $page->slug.'/'.$baseSlug;
+
+                $child->update(['slug' => $newChildSlug]);
+
+                if ($defaultTranslation = $child->translationFor($locale)) {
+                    $defaultTranslation->update([
+                        'slug' => $newChildSlug,
+                    ]);
+                }
+
+                MenuItem::where('page_id', $child->id)->update(['url' => '/'.$newChildSlug]);
+            } else {
+                $childTranslation = $child->translationFor($locale);
+
+                if (! $childTranslation) {
+                    continue;
+                }
+
+                $parentSlug = $page->translationFor($locale)?->slug ?? $page->slug;
+                $localizedSegment = Page::slugSegment($childTranslation->slug, $childTranslation->title);
+
+                $childTranslation->update([
+                    'slug' => $parentSlug.'/'.$localizedSegment,
+                ]);
+            }
+
+            $this->updateDescendantSlugs($child, $locale);
         }
     }
 
@@ -578,6 +758,8 @@ class PageController extends Controller
     {
         $this->authorize('create pages');
 
+        $page->load('translations');
+
         $baseSlug = $page->slug.'-copy';
         $slug = $baseSlug;
         $suffix = 1;
@@ -594,6 +776,33 @@ class PageController extends Controller
         $newPage->publish_at = null;
         $newPage->unpublish_at = null;
         $newPage->save();
+
+        foreach ($page->translations as $translation) {
+            if ($translation->locale === app(SiteLocaleManager::class)->defaultLocale()) {
+                continue;
+            }
+
+            $translatedSlug = $translation->locale === app(SiteLocaleManager::class)->defaultLocale()
+                ? $slug
+                : $this->nextAvailableLocalizedSlug($translation->slug.'-copy', $translation->locale);
+
+            $newPage->translations()->create([
+                'locale' => $translation->locale,
+                'title' => $translation->title,
+                'slug' => $translatedSlug,
+                'content' => $translation->content,
+                'is_published' => false,
+                'metadata' => $translation->metadata ?? [],
+                'blocks' => $translation->blocks ?? [],
+                'meta_title' => $translation->meta_title,
+                'meta_description' => $translation->meta_description,
+                'og_image' => $translation->og_image,
+                'publish_at' => null,
+                'unpublish_at' => null,
+                'published_at' => null,
+            ]);
+        }
+
         app(ContentRouteRegistry::class)->forget();
 
         return redirect()->route('admin.pages.edit', $newPage)
@@ -632,9 +841,11 @@ class PageController extends Controller
         return redirect()->route('admin.pages.index')->with('success', $label);
     }
 
-    public function preview(Page $page): View
+    public function preview(Request $request, Page $page): View
     {
         $this->authorize('edit pages');
+
+        $page->load('translations')->applyLocale($this->selectedLocale($request));
 
         view()->share('page', $page);
 
@@ -646,9 +857,13 @@ class PageController extends Controller
         return view($view, ['page' => $page]);
     }
 
-    public function previewRevision(Page $page, Revision $revision): HttpResponse
+    public function previewRevision(Request $request, Page $page, Revision $revision): HttpResponse
     {
         $this->authorize('edit pages');
+
+        if (! $this->isDefaultLocale($this->selectedLocale($request))) {
+            abort(404);
+        }
 
         abort_unless($revision->page_id === $page->id, 404);
 
@@ -679,6 +894,7 @@ class PageController extends Controller
     public function previewLive(Request $request, Page $page): HttpResponse
     {
         $this->authorize('edit pages');
+        $locale = $this->selectedLocale($request);
 
         $validated = $request->validate([
             'title' => 'nullable|string|max:255',
@@ -702,17 +918,17 @@ class PageController extends Controller
         $preview = $this->makePreviewPage($page, [
             ...Arr::only($validated, ['title', 'slug', 'type', 'editor_mode', 'content']),
             'blocks' => $this->normalizePageBlocks($validated['blocks'] ?? ($page->blocks ?? [])),
-        ]);
+        ], $locale);
 
         return response($this->renderPreviewHtml($preview), 200)->header('Content-Type', 'text/html');
     }
 
-    private function authorizePublishChange(array $validated, ?Page $page = null): void
+    private function authorizePublishChange(array $validated, ?Page $page = null, ?PageTranslation $translation = null): void
     {
         $current = [
-            'is_published' => $page?->is_published ?? false,
-            'publish_at' => $page?->publish_at?->toDateTimeString(),
-            'unpublish_at' => $page?->unpublish_at?->toDateTimeString(),
+            'is_published' => $translation?->is_published ?? $page?->is_published ?? false,
+            'publish_at' => ($translation?->publish_at ?? $page?->publish_at)?->toDateTimeString(),
+            'unpublish_at' => ($translation?->unpublish_at ?? $page?->unpublish_at)?->toDateTimeString(),
         ];
 
         $next = [
@@ -726,9 +942,12 @@ class PageController extends Controller
         }
     }
 
-    private function makePreviewPage(Page $page, array $attributes = []): Page
+    private function makePreviewPage(Page $page, array $attributes = [], ?string $locale = null): Page
     {
+        $page->loadMissing('translations');
         $preview = $page->replicate();
+        $preview->setRelation('translations', $page->translations);
+        $preview->applyLocale($locale);
 
         $fillable = Arr::only($attributes, [
             'title',
@@ -750,8 +969,8 @@ class PageController extends Controller
         ]);
 
         $preview->fill(Arr::except($fillable, ['metadata', 'blocks']));
-        $preview->metadata = $fillable['metadata'] ?? ($page->metadata ?? []);
-        $preview->blocks = $this->normalizePageBlocks($fillable['blocks'] ?? ($page->blocks ?? []));
+        $preview->metadata = $fillable['metadata'] ?? ($preview->metadata ?? $page->metadata ?? []);
+        $preview->blocks = $this->normalizePageBlocks($fillable['blocks'] ?? ($preview->blocks ?? $page->blocks ?? []));
 
         return $preview;
     }

@@ -9,6 +9,7 @@ class Revision extends Model
 {
     protected $fillable = [
         'page_id',
+        'locale',
         'user_id',
         'content_snapshot',
         'meta_snapshot',

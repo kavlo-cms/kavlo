@@ -204,6 +204,10 @@ Route::post('forms/{form:slug}/submit', [FormSubmissionController::class, 'submi
 Route::get('/search', [SearchController::class, 'index'])->name('search');
 
 Route::get('/', [PageController::class, 'show'])->name('home');
+Route::get('{locale}/{slug?}', [PageController::class, 'showLocalized'])
+    ->where('locale', '[A-Za-z0-9-]+')
+    ->where('slug', '.*')
+    ->name('page.localized');
 
 Route::get('{slug}', [PageController::class, 'show'])
     ->where('slug', '.*')

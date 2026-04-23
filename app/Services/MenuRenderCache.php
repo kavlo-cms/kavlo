@@ -16,6 +16,7 @@ class MenuRenderCache
             'cms',
             'menu',
             $this->version(),
+            app(SiteLocaleManager::class)->currentLocale(),
             trim($slug),
             md5(json_encode($options, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '[]'),
         ]);
