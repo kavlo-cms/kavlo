@@ -118,4 +118,4 @@ import {
 
 - The repository includes `database/database.sqlite` and the default environment uses SQLite.
 - Uploaded plugins can be enabled from the admin and may run installers or migrations when activated.
-- Set `APP_VERSION` in production if you want the admin dashboard to detect and notify about newer Kavlo CMS releases.
+- Set `APP_VERSION` in production to the deployed release (for this release: `1.2.0`) so the admin dashboard reports the correct Kavlo CMS version and update status.

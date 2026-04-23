@@ -24,6 +24,11 @@
    composer dev
    ```
 
+## Community Expectations
+
+- Be respectful and constructive in issues, pull requests, and discussions.
+- Follow the project [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## Development Guidelines
 
 - Keep changes focused and avoid unrelated cleanup.

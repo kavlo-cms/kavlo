@@ -7,7 +7,7 @@ and this project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-This section reflects the work being prepared for the **1.2.0** release.
+## [1.2.0] - 2026-04-23
 
 ### Added
 - Initial repository documentation, including the project README and release-facing docs.
@@ -38,6 +38,11 @@ This section reflects the work being prepared for the **1.2.0** release.
 - Fixed theme-config fallback paths that could omit editor theme settings in fresh or incomplete environments.
 - Fixed localized route resolution so normal default-language paths like `/about` do not get mistaken for locale-prefixed routes.
 - Fixed site-language cache hydration so serialized locale data does not break Lando/web requests with `__PHP_Incomplete_Class` errors.
+
+### Upgrade Notes
+- Run the new database migrations introduced for multilingual pages: `site_languages`, `page_translations`, and revision locale support.
+- Set `APP_VERSION=1.2.0` in the deployed environment so admin release detection reports the correct version.
+- Clear caches after deploy so localized routes, settings, and page/menu payloads rebuild against the new schema.
 
 ## [1.0.0]
 
