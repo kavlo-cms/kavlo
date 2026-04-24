@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Form;
+use App\Models\Theme;
 use App\Services\BuilderBlockPayload;
 use App\Services\ContentRouteRegistry;
 use App\Services\FormBuilder;
@@ -42,6 +43,7 @@ class FormsController extends Controller
             'form' => null,
             'availableBlocks' => FormBuilder::availableBlocks(),
             'availableActions' => FormBuilder::publicActions(),
+            'themeConfig' => $this->activeThemeConfig(),
         ]);
     }
 
@@ -102,6 +104,7 @@ class FormsController extends Controller
             ]),
             'availableBlocks' => FormBuilder::availableBlocks(),
             'availableActions' => FormBuilder::publicActions(),
+            'themeConfig' => $this->activeThemeConfig(),
         ]);
     }
 
@@ -155,5 +158,21 @@ class FormsController extends Controller
         app(ContentRouteRegistry::class)->forget();
 
         return redirect()->route('admin.forms.index')->with('success', 'Form deleted.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function activeThemeConfig(): array
+    {
+        $theme = Theme::query()
+            ->where('is_active', true)
+            ->first();
+
+        if ($theme) {
+            return $theme->getConfig();
+        }
+
+        return (new Theme(['slug' => Theme::DEFAULT_THEME_SLUG]))->getConfig();
     }
 }

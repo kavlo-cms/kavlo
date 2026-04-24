@@ -50,10 +50,23 @@ interface FormEditData {
     form_submissions_count?: number;
 }
 
+interface ThemeConfig {
+    name?: string;
+    slug?: string;
+    canvas?: {
+        class?: string;
+        font?: string | null;
+    };
+    blockStyles?: {
+        textColorPresets?: { label: string; value: string }[];
+    };
+}
+
 const props = defineProps<{
     form: FormEditData | null;
     availableBlocks: AvailableBlock[];
     availableActions: FormAction[];
+    themeConfig: ThemeConfig;
 }>();
 
 const isEditing = computed(() => !!props.form?.id);
@@ -424,7 +437,7 @@ function deleteForm() {
             :available-blocks="availableBlocks"
             :selected-block-id="selectedBlockId"
             device="desktop"
-            :theme-config="{}"
+            :theme-config="themeConfig"
             entity-label="form"
             title-placeholder="Form name"
             :allow-file-drop="false"

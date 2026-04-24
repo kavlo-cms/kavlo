@@ -105,9 +105,18 @@ const deviceMaxWidths: Record<Device, string | null> = {
     mobile: '390px',
 };
 const previewStyle = computed<StyleValue>(() => {
+    const style: Record<string, string> = {};
     const maxWidth = deviceMaxWidths[device.value];
 
-    return maxWidth ? { maxWidth } : undefined;
+    if (maxWidth) {
+        style.maxWidth = maxWidth;
+    }
+
+    if (props.themeConfig?.canvas?.font) {
+        style.fontFamily = props.themeConfig.canvas.font;
+    }
+
+    return Object.keys(style).length > 0 ? style : undefined;
 });
 
 const canvasClass = computed(

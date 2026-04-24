@@ -56,9 +56,18 @@ const deviceMaxWidths: Record<Device, string | null> = {
 };
 
 const canvasStyle = computed<StyleValue>(() => {
+    const style: Record<string, string> = {};
     const maxWidth = deviceMaxWidths[props.device];
 
-    return maxWidth ? { maxWidth } : undefined;
+    if (maxWidth) {
+        style.maxWidth = maxWidth;
+    }
+
+    if (props.themeConfig?.canvas?.font) {
+        style.fontFamily = props.themeConfig.canvas.font;
+    }
+
+    return Object.keys(style).length > 0 ? style : undefined;
 });
 
 function blockLabel(block: Block): string {
